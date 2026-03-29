@@ -1,0 +1,453 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --bg:#0B0B09;
+  --surface:#111110;
+  --border:#1C1C1A;
+  --border-mid:#262622;
+  --text-primary:#EDEAE1;
+  --text-secondary:#888882;
+  --text-muted:#3E3E3A;
+  --accent:#C8F040;
+  --mono:'DM Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+  --max:860px;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text-primary);
+  font-family:var(--sans);
+  font-size:17px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── NAV ── */
+nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 40px;
+  height:56px;
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  background:rgba(11,11,9,0.94);
+  backdrop-filter:blur(10px);
+  z-index:100;
+}
+.nav-logo{
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text-primary);
+  text-decoration:none;
+}
+.nav-logo span{color:var(--accent);}
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:28px;
+  list-style:none;
+}
+.nav-links a{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--text-secondary);
+  text-decoration:none;
+  transition:color 0.2s;
+}
+.nav-links a:hover{color:var(--text-primary);}
+.nav-waitlist{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--accent);
+  text-decoration:none;
+  cursor:pointer;
+  background:none;
+  border:none;
+  transition:opacity 0.2s;
+}
+.nav-waitlist:hover{opacity:0.7;}
+
+/* ── HERO ── */
+.hero{
+  max-width:var(--max);
+  margin:0 auto;
+  padding:80px 40px 72px;
+}
+.hero-kicker{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:36px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.hero-kicker::before{
+  content:'';
+  display:inline-block;
+  width:20px;height:1px;
+  background:var(--accent);
+}
+.hero h1{
+  font-family:var(--sans);
+  font-size:clamp(36px,5.5vw,64px);
+  font-weight:300;
+  line-height:1.1;
+  letter-spacing:-0.025em;
+  color:var(--text-primary);
+  margin-bottom:36px;
+  max-width:780px;
+}
+.hero h1 em{
+  font-style:italic;
+  color:var(--text-secondary);
+  font-weight:300;
+}
+.hero-intro{
+  font-size:18px;
+  font-weight:300;
+  color:var(--text-secondary);
+  max-width:640px;
+  line-height:1.75;
+  margin-bottom:40px;
+}
+.hero-intro strong{
+  color:var(--text-primary);
+  font-weight:400;
+}
+
+/* ── DIVIDER ── */
+.divider{
+  border:none;
+  border-top:1px solid var(--border);
+  margin:0;
+}
+
+/* ── BODY CONTENT ── */
+.content{
+  max-width:var(--max);
+  margin:0 auto;
+  padding:0 40px;
+}
+
+/* ── SECTION ── */
+.manifesto-section{
+  padding:64px 0;
+  border-bottom:1px solid var(--border);
+}
+.manifesto-section:last-of-type{
+  border-bottom:none;
+}
+
+.section-heading{
+  font-family:var(--sans);
+  font-size:clamp(22px,2.8vw,32px);
+  font-weight:300;
+  letter-spacing:-0.02em;
+  line-height:1.2;
+  color:var(--text-primary);
+  margin-bottom:28px;
+}
+
+.lead{
+  font-size:17px;
+  font-weight:300;
+  color:var(--text-secondary);
+  line-height:1.8;
+  margin-bottom:24px;
+  max-width:680px;
+}
+
+.lead em{
+  color:var(--text-primary);
+  font-style:italic;
+}
+
+.lead strong{
+  color:var(--text-primary);
+  font-weight:400;
+}
+
+/* italic lead-in — the Thinking Machines pattern */
+.conviction{
+  margin-bottom:28px;
+  max-width:680px;
+}
+.conviction-lead{
+  font-size:17px;
+  font-weight:300;
+  font-style:italic;
+  color:var(--text-primary);
+  display:block;
+  margin-bottom:6px;
+  line-height:1.55;
+}
+.conviction-body{
+  font-size:16px;
+  font-weight:300;
+  color:var(--text-secondary);
+  line-height:1.8;
+}
+
+/* ── GAP TEXT ── */
+.gap-block{
+  border-left:2px solid var(--accent);
+  padding:20px 28px;
+  margin:36px 0;
+  max-width:640px;
+}
+.gap-block p{
+  font-size:16px;
+  font-weight:300;
+  color:var(--text-secondary);
+  line-height:1.8;
+  font-style:italic;
+}
+.gap-block p strong{
+  color:var(--text-primary);
+  font-weight:400;
+  font-style:normal;
+}
+
+/* ── JOIN SECTION ── */
+.join-section{
+  padding:80px 0 64px;
+}
+.join-section h2{
+  font-family:var(--sans);
+  font-size:clamp(26px,3vw,40px);
+  font-weight:300;
+  letter-spacing:-0.02em;
+  line-height:1.15;
+  color:var(--text-primary);
+  margin-bottom:20px;
+  max-width:560px;
+}
+.join-section h2 em{
+  font-style:italic;
+  color:var(--accent);
+}
+.join-section p{
+  font-size:16px;
+  font-weight:300;
+  color:var(--text-secondary);
+  line-height:1.8;
+  max-width:540px;
+  margin-bottom:36px;
+}
+
+.waitlist-row{
+  display:flex;
+  gap:0;
+  max-width:500px;
+  margin-bottom:14px;
+}
+.waitlist-input{
+  flex:1;
+  background:var(--surface);
+  border:1px solid var(--border-mid);
+  border-right:none;
+  color:var(--text-primary);
+  font-family:var(--sans);
+  font-size:14px;
+  font-weight:300;
+  padding:13px 18px;
+  outline:none;
+  transition:border-color 0.2s;
+}
+.waitlist-input::placeholder{color:var(--text-muted);}
+.waitlist-input:focus{border-color:var(--accent);}
+.waitlist-btn{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  background:var(--accent);
+  color:#0B0B09;
+  padding:13px 22px;
+  border:none;
+  cursor:pointer;
+  font-weight:500;
+  white-space:nowrap;
+  transition:opacity 0.2s;
+}
+.waitlist-btn:hover{opacity:0.85;}
+.join-note{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--text-muted);
+  letter-spacing:0.04em;
+}
+.join-note strong{
+  color:var(--accent);
+  font-weight:400;
+}
+.join-social{
+  margin-top:32px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--text-secondary);
+  letter-spacing:0.04em;
+}
+.join-social a{
+  color:var(--accent);
+  text-decoration:none;
+}
+.join-social a:hover{text-decoration:underline;}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:22px 40px;
+}
+.footer-logo{
+  font-family:var(--mono);
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text-primary);
+}
+.footer-logo span{color:var(--accent);}
+.footer-links{
+  display:flex;gap:28px;list-style:none;
+}
+.footer-links a{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  text-decoration:none;
+  transition:color 0.2s;
+}
+.footer-links a:hover{color:var(--text-secondary);}
+.footer-copy{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--text-muted);
+}
+</style>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">Learn<span>Signal</span></a>
+  <ul class="nav-links">
+    <li><a href="#">Signals</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+  <button class="nav-waitlist" onclick="document.querySelector('.join-section').scrollIntoView({behavior:'smooth'})">Join the waitlist →</button>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-kicker">learnsignal.ai</div>
+  <h1>AI PMs don't get better<br>from <em>watching.</em><br>They get better from<br><em>deciding.</em></h1>
+  <p class="hero-intro">
+    LearnSignal is a training platform built entirely around one mechanic: <strong>put the PM inside the decision before revealing the answer.</strong> Every module is a real situation. Every lesson is earned through judgment, not absorbed through slides.
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- MANIFESTO BODY -->
+<div class="content">
+
+  <!-- SECTION 1: The Gap -->
+  <div class="manifesto-section">
+    <h2 class="section-heading">The knowledge gap is widening faster than anyone is closing it.</h2>
+
+    <p class="lead">
+      AI capabilities are compounding. The PM role has been rewritten. Yet most training built for AI PMs today is a patchwork — frameworks borrowed from general product management, lectures filmed before the current generation of models existed, and cohorts that move at the speed of a calendar rather than the speed of the field.
+    </p>
+
+    <div class="gap-block">
+      <p>
+        <strong>The PM in the meeting room knows how to ship.</strong> They do not know how to evaluate a model. They do not know when fine-tuning is the right call or a distraction. They are winging the conversations that shape what gets built.
+      </p>
+    </div>
+
+    <p class="lead">
+      This is not a personal failing. It is a structural one. The tools for developing this kind of judgment don't exist yet. <em>LearnSignal is being built to create them.</em>
+    </p>
+  </div>
+
+  <!-- SECTION 2: The Mechanic -->
+  <div class="manifesto-section">
+    <h2 class="section-heading">Judgment is built through decisions, not definitions.</h2>
+
+    <div class="conviction">
+      <span class="conviction-lead">The scenario comes before the framework.</span>
+      <span class="conviction-body">Every module begins with a real situation — a hallucination reported the night before a board demo, a disagreement with an ML lead over fine-tuning vs RAG, an eval design with no ground truth. You inhabit the role first. You make the call. Then — and only then — does the technique reveal itself. That inversion is deliberate. That inversion is everything.</span>
+    </div>
+
+    <div class="conviction">
+      <span class="conviction-lead">Pressure is part of the curriculum.</span>
+      <span class="conviction-body">Competence built in calm doesn't transfer to chaos. LearnSignal scenarios are written to recreate the actual conditions of the job — stakeholder pressure, incomplete information, tight timelines. The discomfort is the point.</span>
+    </div>
+
+    <div class="conviction">
+      <span class="conviction-lead">Comparison is how you calibrate.</span>
+      <span class="conviction-body">After every decision, you see how your call compares to what experienced practitioners actually did — and why. Not to judge, but to build the internal reference point that separates a PM who guesses from a PM who knows.</span>
+    </div>
+  </div>
+
+  <!-- SECTION 3: What this is not -->
+  <div class="manifesto-section">
+    <h2 class="section-heading">What LearnSignal is not.</h2>
+
+    <p class="lead">
+      This is not a video course. Passive consumption builds familiarity, not fluency.
+    </p>
+    <p class="lead">
+      It is not a cohort. Scheduling dependency is a tax on learning that professionals cannot afford to keep paying.
+    </p>
+    <p class="lead">
+      It is not general product management education with an AI chapter bolted on. LearnSignal is <em>100% AI PM-specific.</em> Every scenario, every tool, every concept exists because an AI PM needs it — not because it rounds out a curriculum.
+    </p>
+    <p class="lead">
+      It is not theoretical. The interactive tools embedded in the platform — prompt labs, cost calculators, eval builders — are the actual instruments of the job. You learn them by using them.
+    </p>
+  </div>
+
+  <!-- SECTION 4: The Platform -->
+  <div class="manifesto-section">
+    <h2 class="section-heading">How we're building it.</h2>
+
+    <div class="conviction">
+      <span class="conviction-lead">Scenarios first. Everything else follows.</span>
+      <span class="conviction-body">The scenario engine is the platform. Before community features, before personalisation, before AI-generated content — we are writing the first 20 scenarios by hand, with practitioners, until they are genuinely hard to get right. The learning experience earns everything else.</span>
+    </div>
+
+    <div class="conviction">
+      <span class="conviction-lead">Interactive tools embedded, not bolted on.</span>
+      <span class="conviction-body">A Prompt Lab where you experiment with system prompts in the context of a real product decision. An Eval Builder that walks you through designing measurement frameworks for outputs that have no ground truth. A Cost Calculator that makes token economics tangible. These aren't resources linked in a sidebar — they are woven into the learning flow.</span>
+    </div>
+
+    <div class="conviction">
+      <span class="conviction-lead">Signals, not noise.</span>
+      <span class="conviction-body">The field moves too fast for a monthly digest. The Week's Signal surfaces one piece of research each week — stripped of academic framing, translated into the decisions it actually changes. We write for the PM who is too busy to read everything and too serious to accept a summary that doesn't tell them what to do differently.</span>
+    </div>
+
+    <div class="conviction">
+      <span class="conviction-lead">Built in public, by a practitioner.</span>
+      <span class="conviction-body">LearnSignal is being built b
