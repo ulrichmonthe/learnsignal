@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabaseAdminClient } from "@/lib/supabase-admin";
+import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
+  const supabaseAdminClient = getSupabaseAdminClient();
+  if (!supabaseAdminClient) {
+    return NextResponse.json(
+      { error: "Service not configured" },
+      { status: 500 },
+    );
+  }
+
   const { email, role, company } = await request
     .json()
     .catch(() => ({ email: null, role: null, company: null }));
