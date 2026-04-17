@@ -15,7 +15,7 @@ export function WaitlistLink({
 
   return (
     <Link
-      href="/waitlist"
+      href="/#waitlist"
       className={className}
       onClick={(e) => {
         if (pathname === "/") {

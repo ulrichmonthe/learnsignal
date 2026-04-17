@@ -1,25 +1,12 @@
 import Link from "next/link";
 import { WaitlistLink } from "@/components/WaitlistLink";
+import { WaitlistForm } from "@/components/WaitlistForm";
+import { Nav } from "@/components/Nav";
 
 export default function Home() {
   return (
     <>
-      <nav>
-        <Link className="nav-logo" href="/">
-          Learn<span>Signal</span>
-        </Link>
-        <ul className="nav-links">
-          <li>
-            <Link href="/signals">Signals</Link>
-          </li>
-          <li>
-            <Link href="/#about">About</Link>
-          </li>
-        </ul>
-        <WaitlistLink className="nav-waitlist">
-          Join the waitlist →
-        </WaitlistLink>
-      </nav>
+      <Nav />
 
       <div className="hero">
         <div className="hero-kicker">learnsignal.ai</div>
@@ -200,24 +187,10 @@ export default function Home() {
             Join the <em>waitlist</em>
           </h2>
           <p>
-            Founding access is opening in small waves. Add your email—we&apos;ll
-            notify you when the next cohort unlocks.
+            Founding access is opening in small waves. Add your email, role, and
+            company—we&apos;ll notify you when the next cohort unlocks.
           </p>
-          <div className="waitlist-row">
-            <input
-              className="waitlist-input"
-              type="email"
-              name="email"
-              placeholder="you@company.com"
-              autoComplete="email"
-            />
-            <button className="waitlist-btn" type="button">
-              Join
-            </button>
-          </div>
-          <p className="join-note">
-            <strong>No spam.</strong> Launch notes only.
-          </p>
+          <WaitlistForm />
           <p className="join-social">
             Updates on <a href="#">@learnsignal</a>
           </p>
