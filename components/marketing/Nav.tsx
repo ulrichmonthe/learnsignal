@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { WaitlistLink } from "@/components/marketing/WaitlistLink";
 
 export function Nav() {
   const pathname = usePathname();
@@ -25,11 +24,8 @@ export function Nav() {
         <li>
           <Link href="/#about">About</Link>
         </li>
-        <li>
-          <Link href="/login">Sign in</Link>
-        </li>
       </ul>
-      <WaitlistLink className="nav-waitlist">Join the waitlist →</WaitlistLink>
+      <Link href="/sign-in" className="nav-waitlist">Sign in →</Link>
     </nav>
   );
 }

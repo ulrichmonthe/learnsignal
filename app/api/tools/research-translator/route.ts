@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -14,9 +15,9 @@ const SYSTEM_PROMPT = `You are a research translator for AI product managers. Gi
 Return only valid JSON. No prose, no markdown, no explanation.`
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { abstract, productType } = await req.json()
   if (!abstract) return NextResponse.json({ error: 'abstract required' }, { status: 400 })
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   try {
     const result = JSON.parse(raw)
     await supabase.from('tool_usage').insert({
-      user_id: user.id,
+      user_id: userId,
       tool_id: 'research-translator',
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,

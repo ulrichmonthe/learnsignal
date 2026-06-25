@@ -1,150 +1,153 @@
-'use client'
+import Link from 'next/link'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+type PlayArea = {
+  eyebrow: string
+  title: string
+  tagline: string
+  learn: string[]
+  realWorld: string[]
+  href: string
+  cta: string
+  accent: string
+}
 
-const PLACEHOLDERS = [
-  "My chatbot keeps making things up and I don't know how to catch it…",
-  "How do I know what good looks like for my agent…",
-  "Should I use RAG or fine-tune for my use case…",
-  "What score should I be targeting…",
+const AREAS: PlayArea[] = [
+  {
+    eyebrow: 'Retrieval',
+    title: 'RAG Lab',
+    tagline: "Build Helix's retrieval pipeline across 13 graded missions.",
+    learn: [
+      "Why a model doesn't know your data — and when RAG beats fine-tuning",
+      'Chunking, dense vs sparse vs hybrid retrieval, and reranking',
+      'Operating RAG in production: stale indexes, query drift, and cost',
+    ],
+    realWorld: [
+      'A support copilot that cites the right help article instead of inventing one',
+      'Cutting wrong answers by fixing how documents get split into chunks',
+      'Keeping a knowledge bot accurate as your docs change every week',
+    ],
+    href: '/playground/rag-lab',
+    cta: 'Enter the RAG Lab',
+    accent: 'rgba(200,240,64,0.9)',
+  },
+  {
+    eyebrow: 'Prompt & Context',
+    title: 'PCE Lab',
+    tagline: 'Make Atlas production-ready across 10 missions.',
+    learn: [
+      'Designing a system prompt that survives real product constraints',
+      'Context assembly — what to put in the window, and what to leave out',
+      'Few-shot examples and output formatting that hold up under pressure',
+    ],
+    realWorld: [
+      "Tuning an assistant's tone and safety without 3×-ing the token bill",
+      'Writing the context blueprint for a doc-grounded support bot',
+      'Stopping a prompt that aced the demo from drifting in production',
+    ],
+    href: '/playground/pce-lab',
+    cta: 'Enter the PCE Lab',
+    accent: 'rgba(100,200,255,0.9)',
+  },
+  {
+    eyebrow: 'Evaluation',
+    title: 'Eval Lab',
+    tagline: "Learn what “good” looks like — then prove it.",
+    learn: [
+      'The eval ladder: vibe check → offline evals → production monitoring',
+      'Writing evaluators and building a golden dataset',
+      'Catching regressions before your users do',
+    ],
+    realWorld: [
+      'Labeling 20 support tickets to find the failure patterns that matter',
+      'Building a rubric for outputs that have no single right answer',
+      'Knowing — with evidence — when an AI feature is ready to ship',
+    ],
+    href: '/playground/eval-lab/concept',
+    cta: 'Enter the Eval Lab',
+    accent: 'rgba(255,180,80,0.9)',
+  },
+  {
+    eyebrow: 'Courses',
+    title: 'The Course Library',
+    tagline: 'Four courses. Self-paced. Built for practitioners.',
+    learn: [
+      'Evals Foundations, Prompt & Context, Harness, and RAG',
+      'Concepts grounded in real product decisions, not slides',
+      'Artifacts you keep: eval suites, scorecards, monitoring plans',
+    ],
+    realWorld: [
+      'A shared vocabulary with your ML team on day one',
+      'Decision frameworks you reach for in the next sprint planning',
+      "The judgment to push back on “let's just fine-tune it”",
+    ],
+    href: '/playground/learn',
+    cta: 'Browse courses',
+    accent: 'rgba(200,100,255,0.9)',
+  },
 ]
 
-const SEEDS = [
-  'Should I use RAG or fine-tuning for my use case?',
-  'What score should I be targeting for my agent?',
-  'How do I know if my AI feature is ready to ship?',
-]
+function Bullets({ heading, items, color }: { heading: string; items: string[]; color: string }) {
+  return (
+    <div>
+      <p className="font-mono uppercase mb-2" style={{ fontSize: '9px', letterSpacing: '0.14em', color }}>
+        {heading}
+      </p>
+      <ul className="space-y-1.5">
+        {items.map((it, i) => (
+          <li key={i} className="flex gap-2" style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.45, fontFamily: 'var(--font-dm-sans)' }}>
+            <span style={{ color, flexShrink: 0 }}>·</span>
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 export default function PlaygroundPage() {
-  const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [placeholderIdx, setPlaceholderIdx] = useState(0)
-  const [fadingOut, setFadingOut] = useState(false)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFadingOut(true)
-      setTimeout(() => {
-        setPlaceholderIdx(i => (i + 1) % PLACEHOLDERS.length)
-        setFadingOut(false)
-      }, 300)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [])
-
-  function submit(value: string) {
-    const trimmed = value.trim()
-    if (!trimmed) return
-    router.push(`/playground/confirm?q=${encodeURIComponent(trimmed)}`)
-  }
-
   return (
-    <div className="min-h-[calc(100vh-57px)] flex items-center">
-      <div className="w-full max-w-[640px] mx-auto px-6 py-12">
-        {/* Eyebrow */}
-        <p className="font-mono text-[11px] tracking-[0.12em] text-text3 uppercase mb-4">
-          Playground
-        </p>
-
-        {/* H1 */}
-        <h1 className="font-display font-medium text-text mb-3 leading-tight"
-          style={{ fontSize: 'clamp(28px, 5vw, 36px)' }}>
-          What are you trying to figure out?
+    <div className="min-h-[calc(100vh-57px)]">
+      <div className="max-w-[1100px] mx-auto px-6 pt-12 pb-24">
+        <p className="font-mono text-[11px] tracking-[0.12em] text-text3 uppercase mb-3">Playground</p>
+        <h1 className="font-display font-medium text-text mb-3 leading-tight" style={{ fontSize: 'clamp(26px, 4vw, 34px)' }}>
+          Pick a play area
         </h1>
-
-        {/* Subhead */}
-        <p className="text-sm leading-relaxed mb-8"
-          style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-dm-sans)' }}>
-          Type it the way you'd say it to a colleague. We'll meet you there.
+        <p className="text-sm leading-relaxed mb-10" style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-dm-sans)', maxWidth: '560px' }}>
+          Each is a hands-on environment that builds one real AI-PM muscle. Skim what you&apos;ll learn and
+          where it shows up on the job, then jump in.
         </p>
 
-        {/* Input */}
-        <div className="relative mb-8">
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && submit(query)}
-            placeholder={PLACEHOLDERS[placeholderIdx]}
-            className="w-full rounded-lg px-5 py-[18px] pr-14 text-[15px] text-text outline-none transition-colors"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '0.5px solid rgba(255,255,255,0.15)',
-              borderRadius: '8px',
-              fontFamily: 'var(--font-dm-sans)',
-              opacity: fadingOut ? 0.6 : 1,
-              transition: 'border-color 0.2s, opacity 0.3s',
-            }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
-          />
-          <button
-            onClick={() => submit(query)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center hover:opacity-90 transition-opacity font-bold text-black"
-            style={{
-              width: '32px',
-              height: '32px',
-              background: '#C8F040',
-              borderRadius: '6px',
-              fontSize: '14px',
-            }}
-            aria-label="Submit"
-          >
-            →
-          </button>
-        </div>
-
-        {/* Seeds */}
-        <p className="font-mono uppercase mb-3"
-          style={{ fontSize: '10px', letterSpacing: '0.12em', color: 'var(--text3)' }}>
-          Or try one of these
-        </p>
-        <div className="space-y-2">
-          {SEEDS.map(seed => (
-            <button
-              key={seed}
-              onClick={() => submit(seed)}
-              className="w-full text-left transition-colors"
-              style={{
-                padding: '10px 14px',
-                border: '0.5px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                fontSize: '13px',
-                color: 'rgba(255,255,255,0.7)',
-                fontFamily: 'var(--font-dm-sans)',
-                background: 'transparent',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.25)'
-                ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.9)'
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.1)'
-                ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)'
-              }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {AREAS.map((a) => (
+            <Link
+              key={a.title}
+              href={a.href}
+              className="group flex flex-col rounded-xl p-6 transition-all"
+              style={{ border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.02)', textDecoration: 'none' }}
             >
-              {seed}
-            </button>
-          ))}
-        </div>
+              <p className="font-mono uppercase mb-2" style={{ fontSize: '10px', letterSpacing: '0.14em', color: a.accent }}>
+                {a.eyebrow}
+              </p>
+              <h2 className="font-display font-medium text-text mb-2" style={{ fontSize: '20px', fontStyle: 'italic' }}>
+                {a.title}
+              </h2>
+              <p className="mb-5" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontFamily: 'var(--font-dm-sans)' }}>
+                {a.tagline}
+              </p>
 
-        {/* Quick links */}
-        <div className="mt-8 pt-6 flex flex-col gap-2" style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)' }}>
-          <a
-            href="/playground/learn"
-            className="font-mono hover:opacity-70 transition-opacity"
-            style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}
-          >
-            📖 Or browse the course library →
-          </a>
-          <a
-            href="/playground/pce-lab"
-            className="font-mono hover:opacity-70 transition-opacity"
-            style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}
-          >
-            🔬 PCE Lab — build Atlas across 10 missions →
-          </a>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6 flex-1">
+                <Bullets heading="What you'll learn" items={a.learn} color={a.accent} />
+                <Bullets heading="In the real world" items={a.realWorld} color="rgba(255,255,255,0.35)" />
+              </div>
+
+              <span
+                className="inline-flex items-center gap-2 font-mono mt-auto"
+                style={{ fontSize: '11px', letterSpacing: '0.1em', color: a.accent }}
+              >
+                {a.cta} <span className="transition-transform group-hover:translate-x-0.5">→</span>
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

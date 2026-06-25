@@ -1,21 +1,24 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import VibeCheckWorkspace from '@/components/playground/eval-lab/vibe-check-workspace'
 
 export default async function VibeCheckPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
 
-  if (!user) redirect('/login')
+  const clerkUser = await currentUser()
+  const email =
+    clerkUser?.primaryEmailAddress?.emailAddress ??
+    clerkUser?.emailAddresses?.[0]?.emailAddress ?? ''
 
-  // Ensure the user exists in our custom users table (synced from auth.users).
-  // Supabase Auth creates rows in auth.users; our FK references the public users table.
+  const supabase = await createServiceClient()
+
+  // Ensure the user exists in our custom users table (keyed by the Clerk user id).
   await supabase
     .from('users')
     .upsert(
-      { id: user.id, email: user.email ?? '' },
+      { id: userId, email },
       { onConflict: 'id' }
     )
 
@@ -42,7 +45,7 @@ export default async function VibeCheckPage() {
   const { data: existingSessions } = await supabase
     .from('vibe_check_sessions')
     .select('id, last_ticket, completed_at')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .is('completed_at', null)
     .order('started_at', { ascending: false })
     .limit(1)
@@ -56,7 +59,7 @@ export default async function VibeCheckPage() {
   } else {
     const { data: newSession, error: insertError } = await supabase
       .from('vibe_check_sessions')
-      .insert({ user_id: user.id, last_ticket: 1 })
+      .insert({ user_id: userId, last_ticket: 1 })
       .select('id, last_ticket')
       .single()
 

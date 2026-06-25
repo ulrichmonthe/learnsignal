@@ -1,13 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import type { RevealData } from '@/app/api/playground/eval-lab/reveal/route'
 import RevealActions from '@/components/playground/eval-lab/reveal-actions'
 
 async function getRevealData(userId: string, sessionId: string | null): Promise<RevealData | null> {
-  // Dynamically import to reuse the pure logic without HTTP
-  // We call the Supabase service directly to avoid a self-HTTP call
-  const { createClient: createService } = await import('@/lib/supabase/server')
-  const supabase = await createService()
+  // Call the Supabase service client directly to avoid a self-HTTP call
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = await createServiceClient()
 
   // Find the session
   let sessionQuery = supabase
@@ -125,15 +124,11 @@ export default async function RevealPage({
 }: {
   searchParams: Promise<{ session_id?: string }>
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
 
   const { session_id } = await searchParams
-  const data = await getRevealData(user.id, session_id ?? null)
+  const data = await getRevealData(userId, session_id ?? null)
 
   if (!data) {
     return (
