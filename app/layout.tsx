@@ -1,46 +1,40 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import "./manifesto.css";
+import type { Metadata } from 'next'
+import { Playfair_Display, DM_Mono, DM_Sans } from 'next/font/google'
+import './globals.css'
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['700', '900'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-dm-mono',
+  display: 'swap',
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "LearnSignal",
-  description:
-    "LearnSignal is a training platform built around putting the PM inside the decision before revealing the answer.",
-  metadataBase: new URL("https://learnsignal.ai"),
-};
+  title: 'The Signal — AI PM Decision Platform',
+  description: 'Learn AI product management through real decisions, not lectures.',
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        {children}
-        {/* If React never hydrates, Next can leave body display:none — reveal after a short delay */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-(function(){
-  function reveal(){
-    try {
-      var b=document.body;
-      if(!b) return;
-      if(window.getComputedStyle(b).display==='none'){
-        b.style.display='block';
-        var s=document.querySelector('style[data-next-hide-fouc]');
-        if(s&&s.parentNode) s.parentNode.removeChild(s);
-      }
-    } catch(e) {}
-  }
-  if(document.readyState==='complete') setTimeout(reveal,1500);
-  else window.addEventListener('load', function(){ setTimeout(reveal,1500); });
-})();
-            `.trim(),
-          }}
-        />
-      </body>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${dmMono.variable} ${dmSans.variable}`}
+    >
+      <body>{children}</body>
     </html>
-  );
+  )
 }

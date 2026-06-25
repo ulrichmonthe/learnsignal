@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Signal — Wireframes</title>
+<style>
+  /* ── Design Tokens ── */
+  :root {
+    --bg:       #080809;
+    --bg2:      #0D0D10;
+    --surface:  #111116;
+    --surface2: #16161C;
+    --border:   #1E1E28;
+    --border2:  #2A2A38;
+    --text:     #EEEEF2;
+    --text2:    #8888A0;
+    --text3:    #44445A;
+    --accent:   #D6F040;
+    --accent-dk:#8FA828;
+    --warm:     #F5C842;
+    --teal:     #30C4B0;
+    --red:      #E84040;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a1a;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: #ccc;
+    padding: 40px 24px;
+  }
+
+  /* ── Frame wrapper ── */
+  .frame-group { margin-bottom: 80px; }
+  .frame-label {
+    font-family: monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .frame-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #333;
+  }
+  .frame {
+    background: var(--bg);
+    border: 1px solid #333;
+    overflow: hidden;
+    position: relative;
+  }
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(214,240,64,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(214,240,64,.02) 1px, transparent 1px);
+    background-size: 64px 64px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .frame > * { position: relative; z-index: 1; }
+
+  /* ── Nav ── */
+  nav {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: monospace;
+    font-size: 12px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-link {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text2);
+    text-decoration: none;
+  }
+  .nav-link.active { color: var(--text); }
+
+  /* ── Typography ── */
+  .eyebrow {
+    font-family: monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .eyebrow.accent { color: var(--accent); }
+  .h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .h1 em { font-style: italic; }
+  .h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .h2 em { font-style: italic; }
+  .h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .body { font-size: 14px; color: var(--text2); line-height: 1.7; }
+  .caption {
+    font-family: monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: .05em;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border: none;
+    cursor: pointer;
+    letter-spacing: .04em;
+  }
+  .btn-ghost {
+    display: inline-block;
+    background: transparent;
+    color: var(--text2);
+    font-family: monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+  }
+  .btn-teal {
+    background: transparent;
+    color: var(--teal);
+    font-family: monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    border: 1px solid var(--teal);
+    cursor: pointer;
+  }
+
+  /* ── Cards & surfaces ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .card.hover-state { border-color: var(--border2); }
+  .card.active-state { border-color: var(--accent); background: var(--surface2); }
+  .card.expert-state { border-color: var(--accent); }
+  .card.teal-state   { border-color: var(--teal); }
+
+  /* ── Slack window ── */
+  .slack-window {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    overflow: hidden;
+  }
+  .slack-titlebar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.red    { background: #FF5F57; }
+  .dot.yellow { background: #FFBD2E; }
+  .dot.green  { background: #28CA41; }
+  .slack-channel {
+    font-family: monospace;
+    font-size: 10px;
+    color: var(--text2);
+    margin-left: 8px;
+  }
+  .slack-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .slack-msg { display: flex; gap: 12px; }
+  .avatar {
+    width: 32px; height: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: monospace; font-size: 11px; color: var(--text2);
+    flex-shrink: 0;
+  }
+  .msg-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .msg-user { font-family: monospace; font-size: 11px; font-weight: 500; color: var(--text); }
+  .msg-time { font-family: monospace; font-size: 9px; color: var(--text3); }
+  .msg-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* ── Input ── */
+  .input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: monospace;
+    font-size: 12px;
+    padding: 12px 16px;
+    width: 100%;
+    outline: none;
+  }
+  .input::placeholder { color: var(--text3); }
+
+  /* ── Progress bar ── */
+  .progress-track {
+    height: 2px;
+    background: var(--border);
+    flex: 1;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width .5s;
+  }
+
+  /* ── Radar placeholder ── */
+  .radar-placeholder {
+    width: 100%;
+    height: 240px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .radar-placeholder svg { opacity: .35; }
+
+  /* ── Score bar ── */
+  .score-bar {
+    height: 3px;
+    background: var(--surface2);
+    margin-top: 16px;
+    position: relative;
+  }
+  .score-fill {
+    height: 100%;
+    background: var(--accent);
+  }
+
+  /* ── Evidence card ── */
+  .evidence-card {
+    border-left: 2px solid var(--border);
+    padding-left: 16px;
+    margin-bottom: 16px;
+  }
+  .evidence-card.quote { border-left-color: var(--accent); }
+  .evidence-card.failure { border-left-color: var(--red); }
+  .evidence-card.stat { border-left-color: var(--warm); }
+  .evidence-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+  .badge {
+    font-family: monospace;
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid currentColor;
+  }
+  .badge.accent { color: var(--accent); }
+  .badge.red    { color: var(--red); }
+  .badge.warm   { color: var(--warm); }
+  .badge.teal   { color: var(--teal); }
+  .badge.muted  { color: var(--text3); border-color: var(--border); }
+
+  /* ── Two col layout ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .col-left {
+    border-right: 1px solid var(--border);
+    padding: 32px;
+    position: sticky;
+    top: 0;
+  }
+  .col-right { padding: 32px; overflow-y: auto; }
+
+  /* ── Skill dimension row ── */
+  .skill-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .skill-name { font-family: monospace; font-size: 11px; color: var(--text2); width: 160px; flex-shrink: 0; }
+  .skill-track { flex: 1; height: 2px; background: var(--surface2); }
+  .skill-fill { height: 100%; background: var(--accent); }
+  .skill-score { font-family: monospace; font-size: 10px; color: var(--text3); width: 28px; text-align: right; }
+
+  /* ── War room ── */
+  .video-placeholder {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .play-btn {
+    width: 48px; height: 48px;
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+  }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* ── Utility ── */
+  .px32 { padding: 32px; }
+  .px24 { padding: 24px; }
+  .mt4  { margin-top: 4px; }
+  .mt8  { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt24 { margin-top: 24px; }
+  .mt32 { margin-top: 32px; }
+  .mb4  { margin-bottom: 4px; }
+  .mb8  { margin-bottom: 8px; }
+  .mb12 { margin-bottom: 12px; }
+  .mb16 { margin-bottom: 16px; }
+  .mb24 { margin-bottom: 24px; }
+  .flex { display: flex; }
+  .flex-col { display: flex; flex-direction: column; }
+  .items-center { align-items: center; }
+  .items-start  { align-items: flex-start; }
+  .justify-between { justify-content: space-between; }
+  .gap4  { gap: 4px; }
+  .gap8  { gap: 8px; }
+  .gap12 { gap: 12px; }
+  .gap16 { gap: 16px; }
+  .gap24 { gap: 24px; }
+  .gap32 { gap: 32px; }
+  .flex1 { flex: 1; }
+  .w-full { width: 100%; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .space-y12 > * + * { margin-top: 12px; }
+  .space-y8  > * + * { margin-top: 8px; }
+  .opacity50 { opacity: .5; }
+  .dashed { border-style: dashed !important; opacity: .4; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 01 — MARKETING / WAITLIST
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">01 — Marketing / Waitlist</div>
+  <div class="frame">
+    <nav>
+      <span class="logo">The Signal</span>
+      <a class="nav-link" href="#">Sign in</a>
+    </nav>
+    <div class="px32" style="max-width:900px;margin:0 auto;padding-top:64px;padding-bottom:80px;">
+      <p class="eyebrow accent">AI PM Decision Platform</p>
+      <h1 class="h1" style="max-width:640px;">
+        Learn AI product management the way engineers learn to code —
+        <em>through doing, not watching.</em>
+      </h1>
+      <p class="body mb24" style="max-width:520px;">
+        Real decisions. Real tradeoffs. Real practitioners. Walk through the decisions every AI PM faces and build judgment that survives contact with your actual product.
+      </p>
+
+      <div class="grid2 mb24" style="gap:32px;">
+        <!-- Slack window teaser -->
+        <div>
+          <p class="caption mb8">Scenario 01 — Fine-tune vs RAG</p>
+          <div class="slack-window">
+            <div class="slack-titlebar">
+              <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+              <span class="slack-channel"># ai-product · engineering</span>
+            </div>
+            <div class="slack-body">
+              <div class="slack-msg">
+                <div class="avatar">S</div>
+                <div>
+                  <div class="msg-meta"><span class="msg-user">Sarah (PM)</span><span class="msg-time">9:03 AM</span></div>
+                  <p class="msg-text">Engineering says fine-tuning will take 3 months and $40k. But our retrieval accuracy is at 61% and customers are churning. What do we do?</p>
+                </div>
+              </div>
+              <div class="slack-msg">
+                <div class="avatar">D</div>
+                <div>
+                  <div class="msg-meta"><span class="msg-user">Devika (ML)</span><span class="msg-time">9:07 AM</span></div>
+                  <p class="msg-text">RAG could get us to 80%+ in 2 weeks. Fine-tuning is overkill for this problem.</p>
+                </div>
+              </div>
+              <div class="slack-msg">
+                <div class="avatar">J</div>
+                <div>
+                  <div class="msg-meta"><span class="msg-user">James (Eng)</span><span class="msg-time">9:09 AM</span></div>
+                  <p class="msg-text">Disagree. Our data is proprietary and the retrieval latency will kill the UX. We need the model to internalize it.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decision options -->
+        <div style="display:flex;flex-direction:column;justify-content:center;">
+          <p class="caption mb12">What would you do?</p>
+          <div class="space-y8">
+            <div class="card"><span class="caption" style="color:var(--text3);margin-right:12px;">01</span><span class="body" style="font-size:13px;color:var(--text2);">Fine-tune on proprietary data</span></div>
+            <div class="card hover-state"><span class="caption" style="color:var(--text3);margin-right:12px;">02</span><span class="body" style="font-size:13px;">Build a RAG pipeline</span></div>
+            <div class="card"><span class="caption" style="color:var(--text3);margin-right:12px;">03</span><span class="body" style="font-size:13px;color:var(--text2);">Hybrid — RAG now, fine-tune later</span></div>
+            <div class="card"><span class="caption" style="color:var(--text3);margin-right:12px;">04</span><span class="body" style="font-size:13px;color:var(--text2);">Delay — improve data quality first</span></div>
+          </div>
+          <div class="mt16"><button class="btn-primary">See how to make this decision →</button></div>
+        </div>
+      </div>
+
+      <!-- Stats strip -->
+      <div style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:24px 0;margin-bottom:32px;" class="grid3">
+        <div><p class="h2" style="color:var(--accent);font-size:36px;margin:0;">12</p><p class="caption mt4">Scenario modules</p></div>
+        <div><p class="h2" style="color:var(--accent);font-size:36px;margin:0;">5</p><p class="caption mt4">Decision frameworks</p></div>
+        <div><p class="h2" style="color:var(--accent);font-size:36px;margin:0;">6</p><p class="caption mt4">Skill dimensions tracked</p></div>
+      </div>
+
+      <!-- Waitlist -->
+      <div style="max-width:480px;">
+        <p class="caption mb8">Founding member access</p>
+        <h2 class="h2" style="font-size:26px;">Join the waitlist. Lock in $29/mo.</h2>
+        <p class="body mb16">Public launch price is $49/mo. Founding members lock the rate permanently.</p>
+        <div class="flex gap8">
+          <input class="input flex1" placeholder="your@email.com" />
+          <button class="btn-primary">Apply →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 02 — LOGIN
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">02 — Login (Magic Link)</div>
+  <div class="frame" style="max-width:480px;">
+    <div style="padding:80px 48px;">
+      <p class="eyebrow accent mb24">The Signal</p>
+      <h2 class="h2">Sign in</h2>
+      <div class="space-y12 mt24">
+        <input class="input" placeholder="your@email.com" />
+        <button class="btn-primary w-full" style="display:block;text-align:center;">Send magic link →</button>
+      </div>
+      <p class="caption mt16" style="color:var(--text3);">We'll email you a sign-in link. No password needed.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 03 — PLAYGROUND LIST
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">03 — Playground — Decision List</div>
+  <div class="frame">
+    <nav>
+      <span class="logo">The Signal</span>
+      <div class="nav-links">
+        <a class="nav-link" href="#">Scenarios</a>
+        <a class="nav-link active" href="#">Playground</a>
+        <a class="nav-link" href="#">Skills</a>
+      </div>
+    </nav>
+    <div class="px32" style="max-width:700px;padding-top:48px;padding-bottom:64px;">
+      <p class="eyebrow mb8">AI PM Decision Playground</p>
+      <h1 class="h1" style="font-size:32px;">What decision are you working through?</h1>
+      <p class="body mb32" style="max-width:520px;">Each category contains signals — questions that force you to think. The playground surfaces evidence from practitioners and helps you reach your own conclusion.</p>
+
+      <div style="display:flex;flex-direction:column;gap:28px;">
+
+        <!-- Decision 01 with signals -->
+        <div>
+          <div class="flex items-baseline gap12 mb12">
+            <span class="caption" style="width:24px;">01</span>
+            <div>
+              <p style="font-size:13px;color:var(--text);font-weight:500;">Problem Selection &amp; Framing</p>
+              <p class="caption mt4">Should this be augmentation or automation? Is AI even right for this problem?</p>
+            </div>
+          </div>
+          <div style="margin-left:36px;display:flex;flex-direction:column;gap:8px;">
+            <div class="card hover-state flex items-start gap12">
+              <span style="color:var(--accent);font-size:12px;margin-top:2px;">→</span>
+              <div>
+                <p style="font-size:13px;color:var(--text);">Could a rules engine solve this?</p>
+                <p class="caption mt4">Is the problem fundamentally ambiguous, or just complex?</p>
+              </div>
+            </div>
+            <div class="card flex items-start gap12">
+              <span style="color:var(--text3);font-size:12px;margin-top:2px;">→</span>
+              <div>
+                <p style="font-size:13px;color:var(--text2);">What's the tolerance for wrong answers?</p>
+                <p class="caption mt4">How much harm does a wrong answer cause, and how easily can a user detect and recover?</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decision 02 — no signals yet -->
+        <div>
+          <div class="flex items-baseline gap12 mb12">
+            <span class="caption" style="width:24px;">02</span>
+            <div>
+              <p style="font-size:13px;color:var(--text);font-weight:500;">Model Strategy</p>
+              <p class="caption mt4">Single frontier model, multi-model routing, or fine-tuned smaller model?</p>
+            </div>
+          </div>
+          <div style="margin-left:36px;">
+            <div class="card dashed"><p class="caption">Signals coming soon</p></div>
+          </div>
+        </div>
+
+        <!-- Decision 03 -->
+        <div class="opacity50">
+          <div class="flex items-baseline gap12 mb12">
+            <span class="caption" style="width:24px;">03</span>
+            <div><p style="font-size:13px;color:var(--text);font-weight:500;">Interaction Surface</p></div>
+          </div>
+        </div>
+        <div class="opacity50">
+          <div class="flex items-baseline gap12">
+            <span class="caption" style="width:24px;">04</span>
+            <div><p style="font-size:13px;color:var(--text);font-weight:500;">Quality Measurement</p></div>
+          </div>
+        </div>
+        <div class="opacity50">
+          <div class="flex items-baseline gap12">
+            <span class="caption" style="width:24px;">05</span>
+            <div><p style="font-size:13px;color:var(--text);font-weight:500;">Trust &amp; Failure Modes</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 04A — SIGNAL CHECKLIST (before reveal)
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">04A — Signal Checklist — Before Reveal</div>
+  <div class="frame">
+    <nav>
+      <span class="logo">The Signal</span>
+      <div class="nav-links">
+        <a class="nav-link" href="#">← Problem Selection</a>
+      </div>
+    </nav>
+    <div class="px32" style="max-width:700px;padding-top:48px;padding-bottom:64px;">
+      <p class="eyebrow mb8">Decision signal</p>
+      <h1 class="h2" style="font-style:italic;font-size:30px;margin-bottom:8px;">Could a rules engine solve this?</h1>
+      <p class="body mb24">Is the problem fundamentally ambiguous, or just complex?</p>
+
+      <div style="border-left:2px solid var(--border2);padding-left:16px;margin-bottom:32px;">
+        <p class="caption mb4">Why it matters</p>
+        <p class="body" style="font-size:13px;">AI adds cost, latency, and unpredictability. If a rules engine handles the job, AI is a worse solution dressed up as a better one.</p>
+      </div>
+
+      <div class="space-y8 mb24">
+        <div class="card active-state flex items-start gap12">
+          <div style="width:16px;height:16px;border:1px solid var(--accent);background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="#080809"><path d="M10 3L5 8.5 2 5.5l-1 1 4 4 6-7z"/></svg>
+          </div>
+          <span style="font-size:13px;">The decision rules can be enumerated explicitly</span>
+        </div>
+        <div class="card flex items-start gap12">
+          <div style="width:16px;height:16px;border:1px solid var(--border2);flex-shrink:0;margin-top:2px;"></div>
+          <span style="font-size:13px;color:var(--text2);">Inputs are structured (not free text, images, audio, or video)</span>
+        </div>
+        <div class="card active-state flex items-start gap12">
+          <div style="width:16px;height:16px;border:1px solid var(--accent);background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="#080809"><path d="M10 3L5 8.5 2 5.5l-1 1 4 4 6-7z"/></svg>
+          </div>
+          <span style="font-size:13px;">The right answer is the same regardless of context</span>
+        </div>
+        <div class="card flex items-start gap12">
+          <div style="width:16px;height:16px;border:1px solid var(--border2);flex-shrink:0;margin-top:2px;"></div>
+          <span style="font-size:13px;color:var(--text2);">Edge cases are rare or known in advance</span>
+        </div>
+        <div class="card flex items-start gap12">
+          <div style="width:16px;height:16px;border:1px solid var(--border2);flex-shrink:0;margin-top:2px;"></div>
+          <span style="font-size:13px;color:var(--text2);">You can describe the rules without using "similar," "probably," or "feels like"</span>
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="flex items-center gap12 mb24">
+        <span class="caption">Score: 2 / 5</span>
+        <div class="progress-track" style="flex:1;">
+          <div class="progress-fill" style="width:40%;"></div>
+        </div>
+      </div>
+
+      <button class="btn-primary">See guidance →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 04B — SIGNAL CHECKLIST (after reveal)
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">04B — Signal Checklist — After Reveal</div>
+  <div class="frame">
+    <nav>
+      <span class="logo">The Signal</span>
+      <div class="nav-links"><a class="nav-link" href="#">← Problem Selection</a></div>
+    </nav>
+    <div class="two-col" style="min-height:600px;">
+      <!-- Left: checklist stays visible -->
+      <div class="col-left" style="max-width:380px;">
+        <p class="eyebrow mb8">Signal</p>
+        <h2 class="h3" style="font-style:italic;margin-bottom:16px;">Could a rules engine solve this?</h2>
+        <div class="space-y8 mb16">
+          <div class="card active-state flex items-start gap8" style="padding:12px 14px;">
+            <div style="width:14px;height:14px;border:1px solid var(--accent);background:var(--accent);flex-shrink:0;margin-top:1px;"></div>
+            <span style="font-size:12px;">Rules can be enumerated explicitly</span>
+          </div>
+          <div class="card flex items-start gap8" style="padding:12px 14px;">
+            <div style="width:14px;height:14px;border:1px solid var(--border2);flex-shrink:0;margin-top:1px;"></div>
+            <span style="font-size:12px;color:var(--text2);">Inputs are structured</span>
+          </div>
+          <div class="card active-state flex items-start gap8" style="padding:12px 14px;">
+            <div style="width:14px;height:14px;border:1px solid var(--accent);background:var(--accent);flex-shrink:0;margin-top:1px;"></div>
+            <span style="font-size:12px;">Same answer regardless of context</span>
+          </div>
+          <div class="card flex items-start gap8" style="padding:12px 14px;">
+            <div style="width:14px;height:14px;border:1px solid var(--border2);flex-shrink:0;margin-top:1px;"></div>
+            <span style="font-size:12px;color:var(--text2);">Edge cases are rare or known</span>
+          </div>
+          <div class="card flex items-start gap8" style="padding:12px 14px;">
+            <div style="width:14px;height:14px;border:1px solid var(--border2);flex-shrink:0;margin-top:1px;"></div>
+            <span style="font-size:12px;color:var(--text2);">No "similar" / "probably" in rules</span>
+          </div>
+        </div>
+        <div class="flex items-center gap8">
+          <span class="caption">2 / 5</span>
+          <div class="progress-track" style="flex:1;"><div class="progress-fill" style="width:40%;"></div></div>
+        </div>
+      </div>
+
+      <!-- Right: guidance + evidence -->
+      <div class="col-right">
+        <div style="border:1px solid var(--border2);padding:20px;margin-bottom:24px;">
+          <p class="caption mb8">Guidance</p>
+          <p class="h3" style="font-style:italic;color:var(--text);margin-bottom:8px;">Leans toward AI</p>
+          <p class="body" style="font-size:13px;">The pattern-matching across messy inputs likely justifies the complexity. AI earns its place when the rules cannot be enumerated and the cost of getting it wrong is bounded.</p>
+        </div>
+
+        <p class="caption mb12">Evidence</p>
+
+        <div class="evidence-card quote">
+          <p class="body" style="font-size:13px;">"That's the error I keep seeing. Teams get excited about deploying AI and skip the fundamental analysis of whether AI actually solves their problem better than what they already have."</p>
+          <div class="evidence-meta">
+            <span class="caption">Jim Iyoob, CRO at Etech Global Services</span>
+            <span class="badge accent">Quote</span>
+            <a href="#" style="font-family:monospace;font-size:10px;color:var(--accent);">ETS Labs ↗</a>
+          </div>
+        </div>
+
+        <div class="evidence-card failure">
+          <p class="body" style="font-size:13px;">A team spent six months deploying ML for call routing. Their existing rules-based system ran at 99.8% accuracy. The ML model achieved 87% — adding latency, consuming more compute, and producing unexplainable failures.</p>
+          <div class="evidence-meta">
+            <span class="badge red">Failure mode</span>
+            <span class="badge muted">High confidence</span>
+          </div>
+        </div>
+
+        <div class="evidence-card stat">
+          <p class="body" style="font-size:13px;">Rules-based systems deploy in 6–8 weeks. AI systems require 12–16 weeks, including data preparation, model training, and validation.</p>
+          <div class="evidence-meta">
+            <span class="badge warm">Statistic</span>
+            <a href="#" style="font-family:monospace;font-size:10px;color:var(--accent);">ETS Labs ↗</a>
+          </div>
+        </div>
+
+        <div class="flex gap8 mt24">
+          <button class="btn-ghost">Save without deciding</button>
+          <button class="btn-ghost">Disagree with framing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 05 — SCENARIO — ACT 1 SITUATION
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">05 — Scenario — Act 1: The Situation</div>
+  <div class="frame">
+    <nav>
+      <span class="logo">The Signal</span>
+      <div class="nav-links"><a class="nav-link" href="#">← Scenarios</a></div>
+    </nav>
+    <div class="px32" style="max-width:800px;padding-top:40px;padding-bottom:64px;">
+      <!-- Progress -->
+      <div class="flex items-center gap12 mb32">
+        <span class="caption">Act 1 of 6</span>
+        <div class="progress-track" style="flex:1;"><div class="progress-fill" style="width:16%;"></div></div>
+        <span class="caption">12 min</span>
+      </div>
+
+      <p class="eyebrow mb8">Act 01 — The situation</p>
+      <h1 class="h2" style="margin-bottom:24px;">Fine-tune vs RAG</h1>
+
+      <div class="slack-window mb24">
+        <div class="slack-titlebar">
+          <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+          <span class="slack-channel"># ai-product · engineering</span>
+        </div>
+        <div class="slack-body">
+          <div class="slack-msg">
+            <div class="avatar">S</div>
+            <div>
+              <div class="msg-meta"><span class="msg-user">Sarah (PM)</span><span class="msg-time">9:03 AM</span></div>
+              <p class="msg-text">Engineering says fine-tuning will take 3 months and $40k. But our retrieval accuracy is at 61% and customers are churning. What do we do?</p>
+            </div>
+          </div>
+          <div class="slack-msg">
+            <div class="avatar">D</div>
+            <div>
+              <div class="msg-meta"><span class="msg-user">Devika (ML)</span><span class="msg-time">9:07 AM</span></div>
+              <p class="msg-text">RAG could get us to 80%+ in 2 weeks. Fine-tuning is overkill for this problem.</p>
+            </div>
+          </div>
+          <div class="slack-msg">
+            <div class="avatar">J</div>
+            <div>
+              <div class="msg-meta"><span class="msg-user">James (Eng)</span><span class="msg-time">9:09 AM</span></div>
+              <p class="msg-text">Disagree. Our data is proprietary and the retrieval latency will kill the UX. We need the model to internalize it.</p>
+            </div>
+          </div>
+          <div class="slack-msg">
+            <div class="avatar">S</div>
+            <div>
+              <div class="msg-meta"><span class="msg-user">Sarah (PM)</span><span class="msg-time">9:11 AM</span></div>
+              <p class="msg-text">How do we decide? I don't have a framework for this.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary">What would you do? →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 06 — SCENARIO — ACT 2 DECISION
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">06 — Scenario — Act 2: Decision Point</div>
+  <div class="frame">
+    <nav><span class="logo">The Signal</span></nav>
+    <div class="px32" style="max-width:700px;padding-top:40px;padding-bottom:64px;">
+      <div class="flex items-center gap12 mb32">
+        <span class="caption">Act 2 of 6</span>
+        <div class="progress-track" style="flex:1;"><div class="progress-fill" style="width:33%;"></div></div>
+        <span class="caption">12 min</span>
+      </div>
+
+      <p class="eyebrow mb8">Act 02 — Decision point</p>
+      <h2 class="h2" style="font-style:italic;">What do you do?</h2>
+      <p class="body mb24">Your retrieval accuracy is 61%. Customers are churning. Engineering has two strong opinions.</p>
+
+      <div class="space-y8 mb24">
+        <div class="card flex items-start gap12" style="padding:16px 20px;">
+          <span class="caption" style="width:24px;flex-shrink:0;">01</span>
+          <span style="font-size:13px;color:var(--text2);">Fine-tune a model on proprietary data ($40k, 3 months)</span>
+        </div>
+        <div class="card active-state flex items-start gap12" style="padding:16px 20px;">
+          <span class="caption" style="width:24px;flex-shrink:0;color:var(--accent);">02</span>
+          <span style="font-size:13px;">Build a RAG pipeline (2 weeks, lower cost)</span>
+        </div>
+        <div class="card flex items-start gap12" style="padding:16px 20px;">
+          <span class="caption" style="width:24px;flex-shrink:0;">03</span>
+          <span style="font-size:13px;color:var(--text2);">Hybrid — RAG now, evaluate fine-tuning in 6 months</span>
+        </div>
+        <div class="card flex items-start gap12" style="padding:16px 20px;">
+          <span class="caption" style="width:24px;flex-shrink:0;">04</span>
+          <span style="font-size:13px;color:var(--text2);">Delay both — improve data quality first</span>
+        </div>
+      </div>
+
+      <button class="btn-primary">See what happens →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 07 — SCENARIO — ACT 3 CONSEQUENCES
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">07 — Scenario — Act 3: Consequences</div>
+  <div class="frame">
+    <nav><span class="logo">The Signal</span></nav>
+    <div class="px32" style="max-width:700px;padding-top:40px;padding-bottom:64px;">
+      <div class="flex items-center gap12 mb32">
+        <span class="caption">Act 3 of 6</span>
+        <div class="progress-track" style="flex:1;"><div class="progress-fill" style="width:50%;"></div></div>
+        <span class="caption">12 min</span>
+      </div>
+
+      <p class="eyebrow mb8">Act 03 — Consequences</p>
+
+      <!-- Chosen path -->
+      <div class="card" style="border-color:var(--border2);padding:20px;margin-bottom:12px;">
+        <p class="caption mb8">You chose</p>
+        <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px;">Build a RAG pipeline</p>
+        <p class="body" style="font-size:13px;">You shipped RAG in 11 days. Retrieval accuracy jumped from 61% to 79%. Churn slowed. Three months later the team identified the 20% of queries that still underperformed — and had clean data to fine-tune on those cases specifically.</p>
+      </div>
+
+      <!-- Expert path callout -->
+      <div class="card expert-state" style="padding:16px 20px;margin-bottom:12px;">
+        <p class="caption mb4" style="color:var(--accent);">Expert path</p>
+        <p style="font-size:12px;color:var(--text2);">RAG was the expert choice — ship fast, measure, then fine-tune only the underperforming slice.</p>
+      </div>
+
+      <!-- Other paths collapsed -->
+      <p class="caption mb8" style="cursor:pointer;">▸ Other paths (3)</p>
+
+      <div class="mt24">
+        <button class="btn-primary">Understand the framework →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 08 — DASHBOARD / SKILL MAP
+══════════════════════════════════════════════ -->
+<div class="frame-group">
+  <div class="frame-label">08 — Dashboard — Skill Map</div>
+  <div class="frame">
+    <nav>
+      <span class="logo">The Signal</span>
+      <div class="nav-links">
+        <a class="nav-link" href="#">Scenarios</a>
+        <a class="nav-link" href="#">Playground</a>
+        <a class="nav-link active" href="#">Skills</a>
+      </div>
+    </nav>
+    <div class="px32" style="max-width:900px;padding-top:48px;padding-bottom:64px;">
+      <p class="eyebrow mb4">Your progress</p>
+      <h1 class="h2" style="margin-bottom:32px;">Skill Map</h1>
+
+      <div class="grid2" style="gap:32px;align-items:start;">
+        <!-- Radar -->
+        <div>
+          <div class="radar-placeholder">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <!-- Radar grid rings -->
+              <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#2A2A38" stroke-width="1"/>
+              <polygon points="100,42 152,72 152,128 100,158 48,128 48,72" fill="none" stroke="#2A2A38" stroke-width="1"/>
+              <polygon points="100,64 134,84 134,116 100,136 66,116 66,84" fill="none" stroke="#2A2A38" stroke-width="1"/>
+              <!-- Axes -->
+              <line x1="100" y1="20" x2="100" y2="180" stroke="#1E1E28" stroke-width="1"/>
+              <line x1="30" y1="60" x2="170" y2="140" stroke="#1E1E28" stroke-width="1"/>
+              <line x1="30" y1="140" x2="170" y2="60" stroke="#1E1E28" stroke-width="1"/>
+              <!-- Data polygon -->
+              <polygon points="100,48 148,76 142,120 100,148 68,124 58,72" fill="rgba(214,240,64,0.12)" stroke="#D6F040" stroke-width="1.5"/>
+              <!-- Labels -->
+              <text x="100" y="14" text-anchor="middle" fill="#44445A" font-size="9" font-family="monospace">Technical</text>
+              <text x="178" y="62" fill="#44445A" font-size="9" font-family="monospace">Strategy</text>
+              <text x="178" y="144" fill="#44445A" font-size="9" font-family="monospace">Execution</text>
+              <text x="100" y="194" text-anchor="middle" fill="#44445A" font-size="9" font-family="monospace">Taste</text>
+              <text x="2" y="144" fill="#44445A" font-size="9" font-family="monospace">Community</text>
+              <text x="2" y="62" fill="#44445A" font-size="9" font-family="monospace">Craft</text>
+            </svg>
+          </div>
+          <p class="caption mt8" style="text-align:center;">Based on 4 completed scenarios</p>
+        </div>
+
+        <!-- Skill breakdown -->
+        <div>
+          <p class="caption mb16">Dimension breakdown</p>
+          <div>
+            <div class="skill-row">
+              <span class="skill-name">Technical Foundation</span>
+              <div class="skill-track"><div class="skill-fill" style="width:68%;"></div></div>
+              <span class="skill-score" style="color:var(--accent);">68</span>
+            </div>
+            <div class="skill-row">
+              <span class="skill-name">Product Craft</span>
+              <div class="skill-track"><div class="skill-fill" style="width:54%;"></div></div>
+              <span class="skill-score" style="color:var(--accent);">54</span>
+            </div>
+            <div class="skill-row">
+              <span class="skill-name">Strategic Thinking</span>
+              <div class="skill-track"><div class="skill-fill" style="width:72%;"></div></div>
+              <span class="skill-score" style="color:var(--accent);">72</span>
+            </div>
+            <div class="skill-row">
+              <span class="skill-name">Execution</span>
+              <div class="skill-track"><div class="skill-fill" style="width:41%;"></div></div>
+              <span class="skill-score">41</span>
+            </div>
+            <div class="skill-row">
+              <span class="skill-name">Community</span>
+              <div class="skill-track"><div class="skill-fill" style="width:30%;"></div></div>
+              <span class="skill-score">30</span>
+            </div>
+            <div class="skill-row">
+              <span class="skill-name">Product Taste</span>
+              <div class="skill-track"><div class="skill-fill" style="width:58%;"></div></div>
+              <span class="skill-score" style="color:var(--accent);">58</span>
+            </div>
+          </div>
+
+          <div class="card teal-state mt24" style="padding:14px 16px;">
+            <p class="caption mb4" style="color:var(--teal);">Blind spot detected</p>
+            <p style="font-size:12px;color:var(--text2);">You consistently underperform on Execution decisions. <a href="#" style="color:var(--teal);">See recommended scenario →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <hr />
+
+      <p class="caption mb12">Continue learning</p>
+      <div class="grid2" style="gap:12px;">
+        <div class="card hover-state">
+          <p class="caption mb4" style="color:var(--accent);">Scenario · Technical Foundation</p>
+          <p style="font-size:13px;color:var(--text);">Fine-tune vs RAG</p>
+          <p class="caption mt4">12 min · Difficulty ●●●○○</p>
+        </div>
+        <div class="card">
+          <p class="caption mb4" style="color:var(--teal);">Playground · Problem Selection</p>
+          <p style="font-size:13px;color:var(--text);">Could a rules engine solve this?</p>
+          <p class="caption mt4">Self-paced · 1 signal</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
