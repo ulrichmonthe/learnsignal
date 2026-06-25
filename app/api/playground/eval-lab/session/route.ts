@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 // GET — fetch or create the user's active vibe check session
 // Returns: { session_id, last_ticket, labels, tickets }
 export async function GET(_req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
 
-  if (authError || !user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -25,7 +26,7 @@ export async function GET(_req: NextRequest) {
   const { data: existingSessions } = await supabase
     .from('vibe_check_sessions')
     .select('id, last_ticket, completed_at')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .is('completed_at', null)
     .order('started_at', { ascending: false })
     .limit(1)
@@ -40,7 +41,7 @@ export async function GET(_req: NextRequest) {
     // Create a fresh session
     const { data: newSession, error: insertError } = await supabase
       .from('vibe_check_sessions')
-      .insert({ user_id: user.id, last_ticket: 1 })
+      .insert({ user_id: userId, last_ticket: 1 })
       .select('id, last_ticket')
       .single()
 

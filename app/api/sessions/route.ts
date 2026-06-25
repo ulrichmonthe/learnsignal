@@ -1,11 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
 
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await supabase
     .from('playground_sessions')
-    .insert({ user_id: user.id, scenario_context: body.scenarioContext ?? {} })
+    .insert({ user_id: userId, scenario_context: body.scenarioContext ?? {} })
     .select('id')
     .single()
 

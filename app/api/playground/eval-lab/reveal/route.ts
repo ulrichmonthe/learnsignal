@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 // Pattern detection slots per the build brief
 const PATTERN_SLOTS = {
@@ -30,10 +31,10 @@ export type RevealData = {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
 
-  if (authError || !user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('vibe_check_sessions')
     .select('id, started_at, completed_at, last_ticket')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('started_at', { ascending: false })
     .limit(1)
 
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
       .from('vibe_check_sessions')
       .select('id, started_at, completed_at, last_ticket')
       .eq('id', sessionId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .limit(1)
   }
 

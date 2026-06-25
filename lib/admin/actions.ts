@@ -1,18 +1,19 @@
 'use server'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import type { Ticket } from './types'
 
 // ── Auth guard ──────────────────────────────────────────────
 
 async function requireAdmin(): Promise<string> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user?.email || user.email !== process.env.ADMIN_EMAIL) {
+  const user = await currentUser()
+  const email = user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress
+  if (!email || email !== process.env.ADMIN_EMAIL) {
     throw new Error('Unauthorized')
   }
-  return user.email
+  return email
 }
 
 // ── Version snapshots ───────────────────────────────────────

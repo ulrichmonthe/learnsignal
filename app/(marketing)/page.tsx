@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { WaitlistLink } from "@/components/marketing/WaitlistLink";
-import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { Nav } from "@/components/marketing/Nav";
 import { SlackDemo } from "@/components/marketing/slack-demo";
 
@@ -193,18 +191,22 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="join-section" id="waitlist">
+        <div className="join-section" id="start">
           <h2>
-            Join the <em>waitlist</em>
+            Start building <em>judgment</em>.
           </h2>
           <p>
-            Founding access is opening in small waves. Add your email, role, and
-            company—we&apos;ll notify you when the next cohort unlocks.
+            LearnSignal is live. Create an account and step into your first
+            decision — the technique reveals itself only after you&apos;ve made
+            the call.
           </p>
-          <WaitlistForm />
-          <p className="join-social">
-            Updates on <a href="#">@learnsignal</a>
-          </p>
+          <Link
+            href="/sign-up"
+            className="waitlist-btn"
+            style={{ display: "inline-block", textDecoration: "none" }}
+          >
+            Get started →
+          </Link>
         </div>
       </div>
 
@@ -217,7 +219,7 @@ export default function Home() {
             <Link href="/signals">Signals</Link>
           </li>
           <li>
-            <WaitlistLink>Waitlist</WaitlistLink>
+            <Link href="/sign-in">Sign in</Link>
           </li>
         </ul>
         <div className="footer-copy">© 2026</div>

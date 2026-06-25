@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { ScenarioContainer } from '@/components/scenario/scenario-container'
 import { notFound } from 'next/navigation'
 
@@ -8,7 +9,8 @@ interface Props {
 
 export default async function ScenarioPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const { userId } = await auth()
+  const supabase = await createServiceClient()
 
   const { data: scenario } = await supabase
     .from('scenarios')
@@ -19,12 +21,10 @@ export default async function ScenarioPage({ params }: Props) {
 
   if (!scenario) notFound()
 
-  const { data: { user } } = await supabase.auth.getUser()
-
   const { data: completion } = await supabase
     .from('scenario_completions')
     .select('*')
-    .eq('user_id', user!.id)
+    .eq('user_id', userId ?? '')
     .eq('scenario_id', scenario.id)
     .order('started_at', { ascending: false })
     .limit(1)

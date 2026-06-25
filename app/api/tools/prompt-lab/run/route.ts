@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 const MONTHLY_LIMIT_INDIVIDUAL = 50
@@ -9,10 +10,10 @@ const MAX_OUTPUT_TOKENS = 1024
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
 
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   const { count } = await supabase
     .from('tool_usage')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('tool_id', 'prompt-lab')
     .gte('created_at', monthStart.toISOString())
 
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
   })
 
   await supabase.from('tool_usage').insert({
-    user_id: user.id,
+    user_id: userId,
     tool_id: 'prompt-lab',
     input_tokens: response.usage.input_tokens,
     output_tokens: response.usage.output_tokens,

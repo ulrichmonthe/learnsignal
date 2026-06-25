@@ -1,13 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 const VALID_TYPES = ['helpful', 'not_helpful', 'saved', 'shared', 'clicked_source'] as const
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
 
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   }
 
   await supabase.from('feedback').insert({
-    user_id: user.id,
+    user_id: userId,
     evidence_id: body.evidenceId ?? null,
     signal_id: body.signalId ?? null,
     feedback_type: body.feedbackType,

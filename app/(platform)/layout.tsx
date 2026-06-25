@@ -1,12 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { UserButton } from '@clerk/nextjs'
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
+  // Defense in depth: middleware already gates these routes, but guard here too.
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
   }
 
   return (
@@ -19,7 +19,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           <a href="/scenarios" className="font-mono text-xs text-text2 hover:text-text transition-colors">Scenarios</a>
           <a href="/playground" className="font-mono text-xs text-text2 hover:text-text transition-colors">Playground</a>
           <a href="/playground/learn" className="font-mono text-xs text-text2 hover:text-text transition-colors">Learn</a>
-          <a href="/dashboard" className="font-mono text-xs text-text2 hover:text-text transition-colors">Skills</a>
+          <UserButton />
         </div>
       </nav>
       <main className="relative z-10">{children}</main>

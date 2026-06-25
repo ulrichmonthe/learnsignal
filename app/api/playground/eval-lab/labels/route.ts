@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 // POST — save a label for a ticket and advance last_ticket
 // Body: { session_id, slot_number, label, note? }
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const supabase = await createServiceClient()
+  const { userId } = await auth()
 
-  if (authError || !user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     .from('vibe_check_sessions')
     .select('id, last_ticket')
     .eq('id', session_id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single()
 
   if (!session) {

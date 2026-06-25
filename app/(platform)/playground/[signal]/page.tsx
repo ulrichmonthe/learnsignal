@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { SignalChecklist } from '@/components/playground/signal-checklist'
 import { notFound } from 'next/navigation'
 
@@ -8,7 +8,7 @@ interface Props {
 
 export default async function SignalPage({ params }: Props) {
   const { signal: slug } = await params
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('signals')
