@@ -14,6 +14,8 @@ import {
   Section,
   SubHead,
 } from '@/components/courses/lesson-helpers'
+import { Exercise } from '@/components/courses/exercise'
+import { PCE_EXERCISES } from '@/lib/courses/exercises/prompt-context-engineering'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -137,7 +139,7 @@ export function PCELesson1Body() {
         the code&rdquo; sounds to a senior engineer.
       </P>
 
-      <ExerciseSoon lessonTitle="You didn't ship a prompt. You shipped a context strategy." />
+      <Exercise spec={PCE_EXERCISES['lesson-1']} />
     </div>
   )
 }
@@ -192,7 +194,7 @@ export function PCELesson2Body() {
         it well.
       </P>
 
-      <ExerciseSoon lessonTitle="Your context window is a budget. Attention is the currency." />
+      <Exercise spec={PCE_EXERCISES['lesson-2']} />
     </div>
   )
 }
@@ -388,7 +390,7 @@ A confident wrong answer is the worst possible outcome.
           place doing — and which of your sections were carrying weight versus padding the budget.
         </p>
       </ExerciseLeadIn>
-      <ExerciseSoon lessonTitle="Anatomy of a system prompt that holds up." />
+      <Exercise spec={PCE_EXERCISES['lesson-3']} />
     </div>
   )
 }
@@ -443,7 +445,7 @@ export function PCELesson4Body() {
         because it is one.
       </P>
 
-      <ExerciseSoon lessonTitle="Show, don't tell: few-shot that generalizes." />
+      <Exercise spec={PCE_EXERCISES['lesson-4']} />
     </div>
   )
 }
@@ -502,7 +504,7 @@ export function PCELesson5Body() {
         that tells you what to re-test.
       </P>
 
-      <ExerciseSoon lessonTitle="Controlling what comes back: reasoning and structure." />
+      <Exercise spec={PCE_EXERCISES['lesson-5']} />
     </div>
   )
 }
@@ -660,7 +662,7 @@ billing sub-flow    isolate    separate call; never shares this window`}</CodeBl
           production.
         </p>
       </ExerciseLeadIn>
-      <ExerciseSoon lessonTitle="Context is the unit of work: write, select, compress, isolate." />
+      <Exercise spec={PCE_EXERCISES['lesson-6']} />
     </div>
   )
 }
@@ -715,7 +717,7 @@ export function PCELesson7Body() {
         pipeline. Bad retrieval doesn&apos;t announce itself. It just confidently cites the wrong page.
       </P>
 
-      <ExerciseSoon lessonTitle="Retrieval without the lies: RAG and lost-in-the-middle." />
+      <Exercise spec={PCE_EXERCISES['lesson-7']} />
     </div>
   )
 }
@@ -773,7 +775,7 @@ export function PCELesson8Body() {
         old, persist the durable.
       </P>
 
-      <ExerciseSoon lessonTitle="Memory, history, and the bill: what to keep, drop, and cache." />
+      <Exercise spec={PCE_EXERCISES['lesson-8']} />
     </div>
   )
 }
@@ -830,7 +832,7 @@ export function PCELesson9Body() {
         future self pulls up after the first incident — except you&apos;ll have written it before.
       </P>
 
-      <ExerciseSoon lessonTitle="The failure modes that cost you trust." />
+      <Exercise spec={PCE_EXERCISES['lesson-9']} />
     </div>
   )
 }
@@ -888,7 +890,7 @@ export function PCELesson10Body() {
         moving. That&apos;s the difference between an AI PM who ships and one who guesses.
       </P>
 
-      <ExerciseSoon lessonTitle="Prompts are code: versioning, regression, and the trajectory problem." />
+      <Exercise spec={PCE_EXERCISES['lesson-10']} />
     </div>
   )
 }

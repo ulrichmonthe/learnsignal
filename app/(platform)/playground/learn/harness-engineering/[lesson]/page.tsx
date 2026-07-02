@@ -5,9 +5,12 @@ import {
   getAdjacentHELessons,
   HARNESS_COURSE,
   HE_ARTIFACT_PREVIEWS,
+  ALL_HE_LESSONS,
 } from '@/lib/courses/harness-engineering'
 import ModuleNav from '@/components/courses/module-nav'
 import ArtifactPanel from '@/components/courses/artifact-panel'
+import { getCourseProgress } from '@/lib/learn/progress'
+import { LessonComplete } from '@/components/courses/lesson-complete'
 import {
   HELesson1Body,
   HELesson2Body,
@@ -49,6 +52,9 @@ export default async function HELessonPage({ params }: PageProps) {
 
   if (!LessonBody) notFound()
 
+  const progress = await getCourseProgress('harness-engineering')
+  const totalLessons = ALL_HE_LESSONS.length
+
   return (
     <div className="min-h-[calc(100vh-57px)]">
       <div className="flex max-w-[1200px] mx-auto px-4 pt-10 pb-24 gap-0">
@@ -63,7 +69,7 @@ export default async function HELessonPage({ params }: PageProps) {
             courseSlug="harness-engineering"
             backLabel="Harness Engineering"
             currentSlug={lessonSlug}
-            completedSlugs={[]}
+            completedSlugs={progress.completedSlugs}
           />
         </aside>
 
@@ -115,6 +121,15 @@ export default async function HELessonPage({ params }: PageProps) {
 
           {/* Lesson body */}
           <LessonBody />
+
+          {/* Mark complete + continue */}
+          <LessonComplete
+            courseSlug="harness-engineering"
+            lessonSlug={lessonSlug}
+            total={totalLessons}
+            nextHref={next ? `/playground/learn/harness-engineering/${next.slug}` : null}
+            initiallyComplete={progress.completedSlugs.includes(lessonSlug)}
+          />
 
           {/* ── Bottom navigation ───────────────────────────────── */}
           <div

@@ -12,6 +12,8 @@ import {
   Section,
   SubHead,
 } from '@/components/courses/lesson-helpers'
+import { Exercise } from '@/components/courses/exercise'
+import { HARNESS_EXERCISES } from '@/lib/courses/exercises/harness-engineering'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -188,7 +190,7 @@ export function HELesson1Body() {
         any long-running agent; we&apos;ll stay concrete with Forge.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Prompt, context, harness: the three layers." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-1']} />
     </div>
   )
 }
@@ -246,7 +248,7 @@ export function HELesson2Body() {
         When a computer can, reaching for the model is the mistake.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Probabilistic vs deterministic." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-2']} />
     </div>
   )
 }
@@ -386,7 +388,7 @@ BAD:   let u = getUser(id).then(x => x)
           attention budget.
         </p>
       </ExerciseLeadIn>
-      <ExerciseSoon lessonTitle="Rules files done right: AGENTS.md and the over-specification trap." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-3']} />
     </div>
   )
 }
@@ -489,7 +491,7 @@ Stop                all CI gates green?        BLOCK stop until green`}</CodeBlo
           and a note on the one failure that should never have been a hook.
         </p>
       </ExerciseLeadIn>
-      <ExerciseSoon lessonTitle="Hooks and gates: the permission system for agents." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-4']} />
     </div>
   )
 }
@@ -546,7 +548,7 @@ export function HELesson5Body() {
         plan. When you brief engineering, this is the diagram you hand them.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Verification loops: Plan-Execute-Verify." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-5']} />
     </div>
   )
 }
@@ -603,7 +605,7 @@ export function HELesson6Body() {
         thread. Getting that split right is most of the skill.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Sub-agents as task isolation." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-6']} />
     </div>
   )
 }
@@ -660,7 +662,7 @@ export function HELesson7Body() {
         is the document that keeps a twelve-step agent run from quietly losing the plot at step seven.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Context garbage collection: compaction, clearing, memory." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-7']} />
     </div>
   )
 }
@@ -775,7 +777,7 @@ PR descriptions too terse        PROMPT           genuinely stylistic,
           consequence, then read why.
         </p>
       </ExerciseLeadIn>
-      <ExerciseSoon lessonTitle="Which layer do you fix? The diagnostic flowchart." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-8']} />
     </div>
   )
 }
@@ -831,7 +833,7 @@ export function HELesson9Body() {
         the same decision.
       </Lead>
 
-      <ExerciseSoon lessonTitle="The economics of the harness." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-9']} />
     </div>
   )
 }
@@ -890,7 +892,7 @@ export function HELesson10Body() {
         work begins.
       </Lead>
 
-      <ExerciseSoon lessonTitle="The shrinking harness." />
+      <Exercise spec={HARNESS_EXERCISES['lesson-10']} />
     </div>
   )
 }

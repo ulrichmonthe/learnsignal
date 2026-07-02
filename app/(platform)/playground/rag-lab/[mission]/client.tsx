@@ -10,7 +10,7 @@ import { retrieve } from '@/lib/rag-lab/retrieve'
 import { generate } from '@/lib/rag-lab/generate'
 import { scoreRetrieval, scoreGeneration } from '@/lib/rag-lab/eval'
 import { computeSignalScore, computeRunCost, computeXP, levelFromXP } from '@/lib/rag-lab/score'
-import { loadProgress, saveProgress, recordMissionResult, recordStageOpened, defaultProgress } from '@/lib/rag-lab/persist'
+import { loadProgress, saveProgress, recordMissionResult, recordStageOpened, defaultProgress, fetchCloudProgress, pushCloudProgress } from '@/lib/rag-lab/persist'
 import { CONFIG } from '@/lib/rag-lab/config'
 import type {
   KnobState, Mission, RunResult, ScoredChunk,
@@ -90,7 +90,12 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
   // so diagnosis missions (no pipeline score) still show the overlay.
   const [passInfo, setPassInfo] = useState<{ rating: 'pass' | 'gold'; score: number } | null>(null)
 
-  useEffect(() => { setProgress(loadProgress()) }, [])
+  useEffect(() => {
+    setProgress(loadProgress())
+    fetchCloudProgress().then((cloud) => {
+      if (cloud) { setProgress(cloud); saveProgress(cloud) }
+    })
+  }, [])
 
   const isExposed = (k: string) => mission.exposedKnobs.includes(k as never)
 
@@ -165,6 +170,7 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     setPassed(true)
     const updated = recordMissionResult(progress, mission.id, score, rating, xp)
     saveProgress(updated)
+    pushCloudProgress(updated)
     setProgress(updated)
     setTimeout(() => setShowPass(true), 500)
   }
@@ -233,6 +239,7 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     const updated = recordStageOpened(progress, stageId)
     setProgress(updated)
     saveProgress(updated)
+    pushCloudProgress(updated)
   }
 
   const nextMission = MISSIONS.find(m => m.order === mission.order + 1)

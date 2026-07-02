@@ -111,3 +111,34 @@ export function resetProgress(): void {
   if (!isClient()) return
   localStorage.removeItem(PROGRESS_KEY)
 }
+
+// ── Cloud sync (per Clerk account) ────────────────────────────────────────────
+// localStorage is the fast local cache; the account (Supabase) is the source of
+// truth that follows the user across devices.
+
+const LAB = 'raglab'
+
+export async function fetchCloudProgress(): Promise<GameProgress | null> {
+  if (!isClient()) return null
+  try {
+    const res = await fetch(`/api/playground/progress?lab=${LAB}`)
+    if (!res.ok) return null
+    const json = await res.json()
+    const d = json?.data as (Omit<GameProgress, 'seenStages'> & { seenStages?: string[] }) | null
+    if (!d || !d.missions) return null
+    return { ...d, seenStages: new Set(d.seenStages ?? []) }
+  } catch {
+    return null
+  }
+}
+
+export function pushCloudProgress(progress: GameProgress): void {
+  if (!isClient()) return
+  const serializable = { ...progress, seenStages: Array.from(progress.seenStages) }
+  // fire-and-forget; localStorage already holds the authoritative local copy
+  fetch('/api/playground/progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lab: LAB, data: serializable }),
+  }).catch(() => {})
+}

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { MISSIONS } from '@/lib/rag-lab/missions'
-import { loadProgress } from '@/lib/rag-lab/persist'
+import { loadProgress, saveProgress, fetchCloudProgress } from '@/lib/rag-lab/persist'
 import { levelFromXP } from '@/lib/rag-lab/score'
 import type { GameProgress } from '@/lib/rag-lab/types'
 
@@ -43,6 +43,13 @@ export default function RAGLabHome() {
 
   useEffect(() => {
     setProgress(loadProgress())
+    // Pull the account's progress (source of truth across devices) and cache it.
+    fetchCloudProgress().then((cloud) => {
+      if (cloud) {
+        setProgress(cloud)
+        saveProgress(cloud)
+      }
+    })
   }, [])
 
   const totalXP = progress?.totalXP ?? 0

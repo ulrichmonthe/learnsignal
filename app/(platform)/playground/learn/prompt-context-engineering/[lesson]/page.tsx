@@ -5,9 +5,12 @@ import {
   getAdjacentPCELessons,
   PROMPT_CONTEXT_COURSE,
   PCE_ARTIFACT_PREVIEWS,
+  ALL_PCE_LESSONS,
 } from '@/lib/courses/prompt-context-engineering'
 import ModuleNav from '@/components/courses/module-nav'
 import ArtifactPanel from '@/components/courses/artifact-panel'
+import { getCourseProgress } from '@/lib/learn/progress'
+import { LessonComplete } from '@/components/courses/lesson-complete'
 import {
   PCELesson1Body,
   PCELesson2Body,
@@ -49,6 +52,9 @@ export default async function PCELessonPage({ params }: PageProps) {
 
   if (!LessonBody) notFound()
 
+  const progress = await getCourseProgress('prompt-context-engineering')
+  const totalLessons = ALL_PCE_LESSONS.length
+
   return (
     <div className="min-h-[calc(100vh-57px)]">
       <div className="flex max-w-[1200px] mx-auto px-4 pt-10 pb-24 gap-0">
@@ -63,7 +69,7 @@ export default async function PCELessonPage({ params }: PageProps) {
             courseSlug="prompt-context-engineering"
             backLabel="Prompt &amp; Context Eng."
             currentSlug={lessonSlug}
-            completedSlugs={[]}
+            completedSlugs={progress.completedSlugs}
           />
         </aside>
 
@@ -115,6 +121,15 @@ export default async function PCELessonPage({ params }: PageProps) {
 
           {/* Lesson body */}
           <LessonBody />
+
+          {/* Mark complete + continue */}
+          <LessonComplete
+            courseSlug="prompt-context-engineering"
+            lessonSlug={lessonSlug}
+            total={totalLessons}
+            nextHref={next ? `/playground/learn/prompt-context-engineering/${next.slug}` : null}
+            initiallyComplete={progress.completedSlugs.includes(lessonSlug)}
+          />
 
           {/* ── Bottom navigation ───────────────────────────────── */}
           <div
