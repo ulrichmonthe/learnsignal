@@ -14,9 +14,20 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  // The session must belong to the caller — the id alone grants nothing.
+  const { data: session } = await supabase
+    .from('playground_sessions')
+    .select('user_id')
+    .eq('id', sessionId)
+    .maybeSingle()
 
-  if (!body.signalId) {
+  if (!session || session.user_id !== userId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => null)
+
+  if (!body || typeof body.signalId !== 'string') {
     return NextResponse.json({ error: 'signalId required' }, { status: 400 })
   }
 

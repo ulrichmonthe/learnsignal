@@ -10,11 +10,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const body = await req.json().catch(() => ({}))
+  const scenarioContext =
+    body?.scenarioContext && typeof body.scenarioContext === 'object' ? body.scenarioContext : {}
 
   const { data, error } = await supabase
     .from('playground_sessions')
-    .insert({ user_id: userId, scenario_context: body.scenarioContext ?? {} })
+    .insert({ user_id: userId, scenario_context: scenarioContext })
     .select('id')
     .single()
 

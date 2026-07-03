@@ -243,11 +243,10 @@ const mission1: Mission = {
   tierLabel: 'The Shift',
   lessonRef: 1,
   targetScore: 70,
-  attemptsAllowed: 'unlimited',
   weights: { w1: 0.70, w2: 0.15, w3: 0.15 },
   character: 'jordan',
   brief:
-    "Hey — quick question before the standup. I was showing the Atlas copilot to the team yesterday and everything looked great. But in the actual product, we're getting weird results. Different answers to the same question, hallucinated features, confident wrong answers. The demo was working off a really clean setup. What's different in production? I feel like I'm missing something fundamental about how this actually works.",
+    "Hey — quick question before the standup. I was showing the Atlas copilot to the team yesterday and everything looked great. But in the actual product, we're getting weird results. Different answers to the same question, hallucinated features, confident wrong answers. The demo was working off a really clean setup. What's different in production? I feel like I'm missing something fundamental about how this actually works. Take a look around the workspace — the Prompt, Few-Shots, and Blueprint tabs — and when you've got your bearings, hit SAVE VERSION to log the baseline. That closes out orientation.",
   startingState: canonicalState(),
   tickets: mission1Tickets,
   teachingConcept: 'The context window is the unit of work, not the prompt',
@@ -438,11 +437,12 @@ const mission2: Mission = {
   tierLabel: 'The Shift',
   lessonRef: 2,
   targetScore: 78,
-  attemptsAllowed: 4,
   weights: { w1: 0.25, w2: 0.55, w3: 0.20 },
   character: 'jordan',
   brief:
     "I got the cost breakdown from Dev. We're processing roughly 4,000 support tickets a day and the token bill is through the roof. Dev says the context window is almost entirely taken up by the system prompt and examples — and there's a lot of redundancy. I went in and looked and honestly I see the problem, but I'm not sure what to cut without breaking things. Can you take a look and trim it down without losing what matters?",
+  devNote:
+    'Cost math for this one: Context Efficiency is 55% of the composite. To clear the target you need the whole prompt + few-shot payload down to roughly 600 tokens (~2,400 characters), with at most 5 examples and none of the ALL-CAPS shouting — the token meter penalizes every fully-capitalized word.',
   startingState: {
     prompt: {
       role: CANONICAL_ATLAS_PROMPT.role,
@@ -550,7 +550,6 @@ const mission3: Mission = {
   tierLabel: 'The Prompt',
   lessonRef: 3,
   targetScore: 82,
-  attemptsAllowed: 5,
   weights: { w1: 0.55, w2: 0.25, w3: 0.20 },
   character: 'jordan',
   brief:
@@ -671,7 +670,6 @@ const mission4: Mission = {
   tierLabel: 'The Prompt',
   lessonRef: 3,
   targetScore: 83,
-  attemptsAllowed: 5,
   weights: { w1: 0.60, w2: 0.20, w3: 0.20 },
   character: 'jordan',
   brief:
@@ -750,13 +748,12 @@ const mission5: Mission = {
   tierLabel: 'The Prompt',
   lessonRef: 5,
   targetScore: 85,
-  attemptsAllowed: 4,
   weights: { w1: 0.40, w2: 0.20, w3: 0.40 },
   character: 'jordan',
   brief:
     "Dev escalated something overnight. The downstream parser that reads Atlas's responses is throwing 500 errors — turns out Atlas is sometimes returning prose, sometimes returning malformed JSON, and the confidence field is occasionally null. The schema instruction in the prompt is too loose. It describes what the fields mean but doesn't type them. I need you to tighten the output schema so the parser never breaks.",
   devNote:
-    "While you're in here — we're planning to add a `related_articles` field next quarter. Design the schema so it's easy to add without breaking the parser.",
+    "While you're in here — we're planning to add a `related_articles` field next quarter. Design the schema so it's easy to add without breaking the parser. One more thing from the incident review: the safety audit reads the uncertainty section for a rule about customers contradicting <context> (\"the context is correct\"). Ours only says it in rules, so safety caps at 85 — and at 85 the schema fix alone won't reach the target. Add that line to uncertainty too.",
   startingState: {
     prompt: {
       role: CANONICAL_ATLAS_PROMPT.role,
@@ -896,7 +893,6 @@ const mission6: Mission = {
   tierLabel: 'The Context',
   lessonRef: 6,
   targetScore: 85,
-  attemptsAllowed: 5,
   weights: { w1: 0.35, w2: 0.35, w3: 0.30 },
   character: 'jordan',
   brief:
@@ -906,6 +902,8 @@ const mission6: Mission = {
     fewShots: CANONICAL_FEW_SHOTS.map((f) => ({ ...f })),
     contextBlueprint: mission6BrokenBlueprint,
   },
+  devNote:
+    'Two extra flags while you fix the blueprint. First, the target is out of reach at the canonical prompt size (~950 tokens) — trim the prompt and few-shots hard, cost is 35% of the score here. Second, the safety audit wants the contradiction rule ("the context is correct") stated in the uncertainty section, not just in rules.',
   tickets: mission6Tickets,
   teachingConcept: 'Context assembly — write, select, compress, isolate',
   completionSynthesis:
@@ -1031,12 +1029,12 @@ const mission7: Mission = {
   tierLabel: 'The Context',
   lessonRef: 7,
   targetScore: 85,
-  attemptsAllowed: 5,
   weights: { w1: 0.40, w2: 0.40, w3: 0.20 },
   character: 'jordan',
   brief:
     "We updated our pricing last month. Atlas is still quoting the old prices — confidently. I looked at the retrieval logs and the problem is that we're pulling 12 chunks per query with no reranking, and the new pricing doc is chunk 9 of 12. The old pricing doc is chunk 1. The model is reading chunk 1 and ignoring chunk 9. We need to fix the retrieval strategy: fewer chunks, reranked by recency and relevance.",
-  devNote: 'Sara is aware. Three customer complaints.',
+  devNote:
+    "Sara is aware. Three customer complaints. Heads-up on the math: fixing retrieval alone won't reach the target — Context Efficiency is 40% of the composite, so the prompt and few-shots also need to come down well below the canonical ~950 tokens. And when you set the docs budget, state the chunk count explicitly (e.g. \"3–5 chunks\"), not just a token figure.",
   startingState: {
     prompt: { ...CANONICAL_ATLAS_PROMPT },
     fewShots: CANONICAL_FEW_SHOTS.map((f) => ({ ...f })),
@@ -1165,13 +1163,12 @@ const mission8: Mission = {
   tierLabel: 'The Context',
   lessonRef: 8,
   targetScore: 87,
-  attemptsAllowed: 4,
   weights: { w1: 0.20, w2: 0.65, w3: 0.15 },
   character: 'jordan',
   brief:
     "Finance flagged us. Our LLM cost per ticket has nearly doubled in two months. User volume is up 30% but cost is up 85%. I dug in and found three problems: the system prompt has the current date injected which means it can never be cached, the conversation history is sent raw and uncompressed even after 20 turns, and we re-derive the user's plan tier from the transcript every single call instead of writing it to memory once. We're paying to re-read our own conversation on every message.",
   devNote:
-    "Just so you know — caching only works if the stable prefix is actually stable. If you put the date or anything session-specific in the system prompt, caching breaks and you pay full price every call. Check your prompt.",
+    "Just so you know — caching only works if the stable prefix is actually stable. If you put the date or anything session-specific in the system prompt, caching breaks and you pay full price every call. Check your prompt. And to be blunt about the math: fixing the four cost sabotages isn't enough with cost weighted at 65% — the prompt and examples themselves have to shrink to roughly 450 tokens total (keep 1–2 short examples and the key safety phrases). This is the most aggressive trim in the lab.",
   startingState: {
     prompt: {
       role: CANONICAL_ATLAS_PROMPT.role + " Today's date: {{today_date}}.",
@@ -1271,7 +1268,6 @@ const mission9: Mission = {
   tierLabel: 'Production',
   lessonRef: 9,
   targetScore: 88,
-  attemptsAllowed: 5,
   weights: { w1: 0.20, w2: 0.15, w3: 0.65 },
   character: 'sara',
   brief:
@@ -1359,13 +1355,12 @@ const mission10: Mission = {
   tierLabel: 'Production',
   lessonRef: 10,
   targetScore: 90,
-  attemptsAllowed: 4,
   weights: { w1: 0.35, w2: 0.30, w3: 0.35 },
   character: 'jordan',
   brief:
     "We upgraded Atlas to the new reasoning model last Tuesday. Composite score dropped 14 points overnight. Dev ran a diff and found the issue: the system prompt has an explicit step-by-step chain-of-thought instruction — 'think step-by-step before answering, first identify, second locate, third formulate' — that was written for the old model. Reasoning models do that internally. Explicitly instructing them to do it out loud makes the answers longer, slower, and weirdly circular. The prompt is fighting the model.",
   devNote:
-    "I've loaded the test suite we used before launch. This is what we should have run before upgrading the model.",
+    "I've loaded the test suite we used before launch. This is what we should have run before upgrading the model. Two more findings from the regression run: the composite can't hit 90 at the canonical prompt size, so trim the prompt and few-shots down hard (cost is 30% of the score); and the safety audit reads the uncertainty section for the contradiction rule (\"the context is correct\") — make sure it's stated there, not only in rules.",
   startingState: {
     prompt: {
       role: CANONICAL_ATLAS_PROMPT.role,

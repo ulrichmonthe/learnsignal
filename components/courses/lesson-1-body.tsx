@@ -11,6 +11,8 @@ import {
   CodeBlock,
   AgentBox,
 } from '@/components/courses/lesson-helpers'
+import { Exercise } from '@/components/courses/exercise'
+import { EVALS_EXERCISES } from '@/lib/courses/exercises/evals-foundations'
 
 export default function Lesson1Body() {
   return (
@@ -200,6 +202,7 @@ PATTERN 3: Multi-issue label drops
           </Link>
         </div>
       </div>
+      <Exercise spec={EVALS_EXERCISES['lesson-1']} />
     </div>
   )
 }

@@ -151,13 +151,13 @@ export default function EvalConceptPage() {
           ]}
         />
 
-        {/* What the triage agent reveals */}
+        {/* What vibe checks turn up */}
         <div className="mt-8 mb-8">
           <p
             className="font-mono uppercase mb-4"
             style={{ fontSize: '10px', letterSpacing: '0.12em', color: 'var(--text3)' }}
           >
-            What the triage agent reveals
+            What vibe checks turn up
           </p>
           <p
             className="mb-5"
@@ -168,28 +168,26 @@ export default function EvalConceptPage() {
               fontFamily: 'var(--font-dm-sans)',
             }}
           >
-            A team vibe-checking the Support Triage Agent would immediately find these patterns —
-            things you&apos;d never anticipate from a requirements doc:
+            The failures a vibe check surfaces are rarely random one-offs. They cluster into
+            repeatable patterns — and almost never the ones the requirements doc worried about.
+            Three real examples from other teams&apos; vibe checks:
           </p>
           <div className="space-y-3">
             {[
               {
-                name: 'Short-input hallucinations',
+                name: 'A meeting summariser that invented decisions',
                 detail:
-                  'Very short inputs like "Help!" cause the agent to fabricate error codes, browser types, and root causes that aren\'t in the ticket. It fills the ambiguity with plausible-sounding noise.',
-                accent: true,
+                  'Every summary was fluent and confident. But when a meeting ended without a decision, the summary quietly picked one anyway. Nobody caught it from spot-reading — the outputs looked right.',
               },
               {
-                name: 'Sarcasm read as neutral',
+                name: 'A code-review bot that praised deleted tests',
                 detail:
-                  'The sentiment analysis can\'t detect sarcasm. "Cool, ANOTHER charge I didn\'t authorise" gets labelled Neutral. Angry customers slip through without escalation.',
-                accent: true,
+                  'It scored diffs on style and structure — and missed that failing tests had simply been removed. The single most important signal wasn\'t in its rubric at all.',
               },
               {
-                name: 'Multi-issue label drops',
+                name: 'A travel planner that agreed with everything',
                 detail:
-                  'When a ticket mentions two separate issues, the agent picks the first and ignores the second. "I can\'t log in and I need to update my billing" becomes a login ticket only.',
-                accent: true,
+                  'When users pushed back — even with wrong information — it caved and rebuilt the itinerary around the error. Satisfaction surveys looked great. The itineraries got steadily worse.',
               },
             ].map(p => (
               <div
@@ -230,7 +228,9 @@ export default function EvalConceptPage() {
               fontStyle: 'italic',
             }}
           >
-            These vibe check findings shape the PRD — not the other way around. The PRD
+            The Support Triage Agent has its own failure patterns — several of them, hiding in
+            its outputs. This lesson won&apos;t tell you what they are: finding them yourself is
+            the exercise. Those findings then shape the PRD — not the other way around. The PRD
             is written <em>after</em> you know what the agent actually does.
           </p>
         </div>
@@ -424,9 +424,10 @@ export default function EvalConceptPage() {
               maxWidth: '520px',
             }}
           >
-            You&apos;ve seen the three failure patterns on paper. Now find them yourself —
-            by labelling the same 20 tickets the triage agent processed. It takes about
-            8 minutes. You&apos;ll end up knowing the patterns in a way reading never produces.
+            The triage agent has processed 20 real tickets, and its failure patterns are
+            hiding in the outputs. Label all 20 — pass, needs edits, fail — and see what
+            emerges. It takes about 8 minutes, and you&apos;ll know the patterns in a way
+            reading about them never produces.
           </p>
           <div className="flex items-center gap-6 flex-wrap">
             <Link

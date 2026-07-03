@@ -80,7 +80,7 @@ export const MISSIONS: Mission[] = [
     module: 1,
     anchorLessons: [4],
     title: "Chunk Helix's Docs",
-    brief: 'The liability answer keeps coming back ungrounded. The starting 128-word chunks are splitting "the account holder bears no liability" across a boundary, so no single chunk fully contains it. Increase the chunk size or add overlap until the gold span lands in one chunk.',
+    brief: 'The liability answer keeps coming back ungrounded. The starting 128-word chunks are splitting "the account holder bears no liability" across a boundary, so no single chunk fully contains it. Increase the chunk size or add overlap until the gold span lands in one chunk — but watch out: some bigger sizes just re-split it at a new boundary. Overlap is the reliable insurance.',
     queryIds: ['q-liability'],
     exposedKnobs: ['chunkSize', 'overlap'],
     initialKnobs: { chunkSize: 128, overlap: 0 },
@@ -131,7 +131,7 @@ export const MISSIONS: Mission[] = [
     module: 2,
     anchorLessons: [6],
     title: 'Add a Reranker',
-    brief: 'The right chunk is being retrieved but it\'s sitting at rank 6 — just below your top-k. Raising top-k alone will bust your budget with irrelevant chunks. Enable the reranker to bring it back to the top without the noise.',
+    brief: 'The right chunk is being retrieved but it\'s sitting at rank 6 — just below your top-k. Raising top-k alone drags in irrelevant chunks and caps your score below the 78 target. Enable the reranker to bring it back to the top without the noise.',
     queryIds: ['q-payout-timing'],
     exposedKnobs: ['rerank', 'candidatePool', 'topK'],
     lockedKnobs: {
@@ -143,7 +143,10 @@ export const MISSIONS: Mission[] = [
       alpha: 0.5,
     },
     injection: 'lowRankGold',
-    passThreshold: CONFIG.score.passThreshold,
+    // 78, not the standard 70: widening top-k without the reranker tops out at
+    // 76 (F1 dilution + irrelevant-chunk penalty), so the reranker is genuinely
+    // required. Every rerank config with pool ≥ 6 and topK ≤ 5 scores 79–100.
+    passThreshold: 78,
     budgetTokens: CONFIG.budget.perMissionTokens,
   },
 
@@ -157,7 +160,10 @@ export const MISSIONS: Mission[] = [
     queryIds: ['q-liability', 'q-section420', 'q-lies-for-money', 'q-payout-timing', 'q-2fa-methods', 'q-kyc-docs'],
     exposedKnobs: ['diagnosis'],
     lockedKnobs: {
-      chunkSize: 256,
+      // 384-word chunks re-split the q-liability gold span at a boundary, so
+      // that query becomes a true GENERATION failure (gold retrieved, claim
+      // hallucinated) — all three tags are the correct answer for some query.
+      chunkSize: 384,
       overlap: 32,
       embeddingModel: 'helix-embed-large',
       method: 'dense',
@@ -243,6 +249,10 @@ export const MISSIONS: Mission[] = [
     brief: 'Retrieval scores great on your test queries. But real users phrase things differently — colloquially, with typos, without the right vocabulary. Diagnose the gap, then re-tune until the production query set hits target.',
     queryIds: ['q-payout-timing-drift', 'q-2fa-drift', 'q-kyc-drift'],
     exposedKnobs: ['diagnosis', 'chunkSize', 'method', 'topK'],
+    // Open in the broken state: sparse was tuned for the clean test set and
+    // scores 0 on all three colloquial production queries. The learner must
+    // diagnose the drift AND switch to dense/hybrid to pass.
+    initialKnobs: { method: 'sparse' },
     lockedKnobs: {
       overlap: 32,
       embeddingModel: 'helix-embed-large',
@@ -269,7 +279,7 @@ export const MISSIONS: Mission[] = [
     module: 3,
     anchorLessons: [11],
     title: 'Wire the Monitors',
-    brief: 'Four signals will warn you before users complain — but only if you turn them on and set the right thresholds. Configure all four monitors so they would have caught the three seeded incidents in the last month of Helix traffic, with at most one false alarm.',
+    brief: 'Four signals will warn you before users complain — but only if you set the right thresholds. Review the last two weeks of Helix traffic, then configure all four monitors so they would have caught the three seeded incidents with at most one false alarm. Too loose and an incident slips through; too tight and you cry wolf on normal noise.',
     queryIds: ['q-liability', 'q-payout-timing', 'q-lies-for-money'],
     exposedKnobs: ['monitors'],
     lockedKnobs: {

@@ -51,10 +51,14 @@ export function scoreGeneration(
   query: Query,
 ): GenerationScore {
   const totalGoldClaims = query.goldClaims.length
+  // A stale claim (M7) is grounded in its fed chunk but factually superseded —
+  // it counts AGAINST correctness while leaving groundedness intact. That gap
+  // (grounded ≠ correct) is the stale-index failure mode.
   const supportedClaims = answer.claims.filter(
-    c => !c.isHallucinated
+    c => !c.isHallucinated && !c.isStale
   ).length
   const hallucinatedClaims = answer.claims.filter(c => c.isHallucinated).length
+  const staleClaims = answer.claims.filter(c => c.isStale).length
 
   const correctness =
     totalGoldClaims === 0 ? 1 : supportedClaims / totalGoldClaims
@@ -65,7 +69,7 @@ export function scoreGeneration(
       ? 1
       : (totalAnswerClaims - hallucinatedClaims) / totalAnswerClaims
 
-  return { correctness, groundedness, hallucinatedClaims }
+  return { correctness, groundedness, hallucinatedClaims, staleClaims }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

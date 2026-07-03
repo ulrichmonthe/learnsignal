@@ -4,16 +4,18 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { getMissionById, MISSIONS } from '@/lib/rag-lab/missions'
 import { QUERIES, DRIFT_PROD_SET, getQueryById, EVAL_SET } from '@/lib/rag-lab/queries'
-import { getCorpusForMission } from '@/lib/rag-lab/corpus'
+import { getCorpusForMission, getStaleDocIds } from '@/lib/rag-lab/corpus'
 import { chunkCorpus } from '@/lib/rag-lab/chunk'
 import { retrieve } from '@/lib/rag-lab/retrieve'
 import { generate } from '@/lib/rag-lab/generate'
 import { scoreRetrieval, scoreGeneration } from '@/lib/rag-lab/eval'
 import { computeSignalScore, computeRunCost, computeXP, levelFromXP } from '@/lib/rag-lab/score'
-import { loadProgress, saveProgress, recordMissionResult, recordStageOpened, defaultProgress } from '@/lib/rag-lab/persist'
+import { loadProgress, saveProgress, recordMissionResult, recordStageOpened, defaultProgress, fetchCloudProgress, pushCloudProgress } from '@/lib/rag-lab/persist'
+import { MONITOR_TRAFFIC, MONITOR_DEFAULTS, evaluateMonitors } from '@/lib/rag-lab/monitors'
+import type { MonitorEvalResult } from '@/lib/rag-lab/monitors'
 import { CONFIG } from '@/lib/rag-lab/config'
 import type {
-  KnobState, Mission, RunResult, ScoredChunk,
+  KnobState, Mission, RunResult, ScoredChunk, MonitorThresholds,
   GameProgress, GeneratedAnswer, RetrievalResult, ScenarioCard,
 } from '@/lib/rag-lab/types'
 import type { ScoreBreakdown } from '@/lib/rag-lab/score'
@@ -83,14 +85,20 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
   const [diagnosisChoice, setDiagnosisChoice] = useState<string | null>(null)
   const [diagnosisSubmitted, setDiagnosisSubmitted] = useState(false)
   const [scenarioAnswers, setScenarioAnswers] = useState<Record<string, string>>({})
-  const [monitorThresholds, setMonitorThresholds] = useState({ retrievalRate: 0.85, relevance: 0.7, faithfulness: 0.85, cost: 600 })
+  const [monitorThresholds, setMonitorThresholds] = useState<MonitorThresholds>(() => ({ ...MONITOR_DEFAULTS }))
+  const [monitorResult, setMonitorResult] = useState<MonitorEvalResult | null>(null)
   const [stale, setStale] = useState(true)
   // What the pass overlay should show — set by whichever handler passes the
   // mission (pipeline run, diagnosis, or scenario). Independent of scoreBreakdown
   // so diagnosis missions (no pipeline score) still show the overlay.
   const [passInfo, setPassInfo] = useState<{ rating: 'pass' | 'gold'; score: number } | null>(null)
 
-  useEffect(() => { setProgress(loadProgress()) }, [])
+  useEffect(() => {
+    setProgress(loadProgress())
+    fetchCloudProgress().then((cloud) => {
+      if (cloud) { setProgress(cloud); saveProgress(cloud) }
+    })
+  }, [])
 
   const isExposed = (k: string) => mission.exposedKnobs.includes(k as never)
 
@@ -113,7 +121,9 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
       rerank: knobs.rerank, candidatePool: knobs.candidatePool,
       lowRankGold: mission.injection === 'lowRankGold',
     })
-    const answer = generate(query, retrieval.fedChunks)
+    // Stale-index injection (M7): claims grounded in a stale document version
+    // come out as the superseded fact — grounded, zero hallucinations, wrong.
+    const answer = generate(query, retrieval.fedChunks, getStaleDocIds(mission.injection))
     const retrievalScore = scoreRetrieval(retrieval.ranked, query.goldSpans)
     const generationScore = scoreGeneration(answer, query)
 
@@ -165,6 +175,7 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     setPassed(true)
     const updated = recordMissionResult(progress, mission.id, score, rating, xp)
     saveProgress(updated)
+    pushCloudProgress(updated)
     setProgress(updated)
     setTimeout(() => setShowPass(true), 500)
   }
@@ -181,14 +192,22 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     const newAttempts = attempts + 1
     setAttempts(newAttempts)
     setStale(false)
-    // Missions that also require a diagnosis (M8, M12) pass via the diagnosis
+    // Missions that also require a diagnosis (M8) pass via the diagnosis
     // handler once the pipeline is green; pure pipeline missions pass here.
     const needsDiagnosis = mission.exposedKnobs.includes('diagnosis' as never)
     if (!needsDiagnosis && c.worst.breakdown.rating !== 'retry' && !passed) {
       finishPass(c.worst.breakdown.rating === 'gold' ? 'gold' : 'pass',
         c.worst.breakdown.signalScore, newAttempts, c.worst.generationScore.hallucinatedClaims, c.tokensUsed)
     }
-  }, [knobs, mission, tokensUsed, attempts, passed, progress])
+    // If the correct diagnosis was already submitted while the pipeline was
+    // still red, the mission passes the moment a run goes green — no re-submit
+    // needed and no lock-out.
+    if (needsDiagnosis && !passed && diagnosisSubmitted
+      && diagnosisChoice === mission.diagnosisCorrect && c.worst.breakdown.rating !== 'retry') {
+      finishPass(c.worst.breakdown.rating === 'gold' ? 'gold' : 'pass',
+        c.worst.breakdown.signalScore, newAttempts, c.worst.generationScore.hallucinatedClaims, c.tokensUsed)
+    }
+  }, [knobs, mission, tokensUsed, attempts, passed, progress, diagnosisSubmitted, diagnosisChoice])
 
   // Populate the pipeline view for pure-diagnosis missions (no RUN button) so
   // the brief's "inspect each pipeline stage" is actually possible.
@@ -202,20 +221,48 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── Diagnosis missions (1, 7, 8, 12) ────────────────────────────────────────
+  // ── Diagnosis missions (1, 7, 8) ────────────────────────────────────────────
+  // Re-submittable: a wrong pick — or a correct pick made before the pipeline is
+  // green (M8) — never locks the mission. The learner just picks / tunes again.
   const handleDiagnosisSubmit = useCallback(() => {
-    if (!diagnosisChoice || diagnosisSubmitted) return
+    if (!diagnosisChoice || passed) return
     setDiagnosisSubmitted(true)
     const correct = diagnosisChoice === mission.diagnosisCorrect
-    // If the mission also exposes tuning knobs (M8, M12), the pipeline must also
+    // If the mission also exposes tuning knobs (M8), the pipeline must also
     // be green — diagnosis alone no longer passes those missions.
     const hasTuning = mission.exposedKnobs.some(k => k !== 'diagnosis')
     const pipelineOk = !hasTuning || (scoreBreakdown ? scoreBreakdown.rating !== 'retry' : false)
-    if (correct && pipelineOk && !passed) {
-      finishPass('pass', 100, attempts + 1, 0, 0)
+    if (correct && pipelineOk) {
+      const score = hasTuning && scoreBreakdown ? scoreBreakdown.signalScore : 100
+      const rating = hasTuning && scoreBreakdown && scoreBreakdown.rating === 'gold' ? 'gold' : 'pass'
+      finishPass(rating, score, attempts + 1, 0, tokensUsed)
     }
     setAttempts(a => a + 1)
-  }, [diagnosisChoice, diagnosisSubmitted, mission, passed, attempts, progress, scoreBreakdown])
+  }, [diagnosisChoice, mission, passed, attempts, progress, scoreBreakdown, tokensUsed])
+
+  // Feedback under the diagnosis panel — mission-aware, and explicit about the
+  // "correct diagnosis, pipeline still red" state so M8 never dead-ends.
+  const diagnosisFeedback: { ok: boolean; text: string } | null = (() => {
+    if (!diagnosisSubmitted || !diagnosisChoice) return null
+    const correct = diagnosisChoice === mission.diagnosisCorrect
+    const hasTuning = mission.exposedKnobs.some(k => k !== 'diagnosis')
+    const pipelineOk = !hasTuning || (scoreBreakdown ? scoreBreakdown.rating !== 'retry' : false)
+    if (!correct) return { ok: false, text: '✗ Not quite. Inspect the pipeline stages — where does the evidence trail actually break? Pick again.' }
+    if (!pipelineOk) return { ok: true, text: '✓ Diagnosis correct. Now re-tune the knobs until every production query clears the target — the mission passes on your next green run.' }
+    if (mission.id === 'mission-7') return { ok: true, text: '✓ Correct. Every pipeline stage is green — the index itself is serving a superseded document version. Freshness is a failure mode outside the pipeline.' }
+    return { ok: true, text: '✓ Correct. Retrieval missed the gold chunk — weak model + topK=1 meant the right context never reached generation.' }
+  })()
+
+  // ── Monitor mission (9) ─────────────────────────────────────────────────────
+  const handleMonitorSubmit = useCallback(() => {
+    const res = evaluateMonitors(monitorThresholds)
+    setMonitorResult(res)
+    const newAttempts = attempts + 1
+    setAttempts(newAttempts)
+    if (res.passed && !passed) {
+      finishPass(res.rating === 'gold' ? 'gold' : 'pass', res.score, newAttempts, 0, 0)
+    }
+  }, [monitorThresholds, attempts, passed, progress])
 
   // ── Scenario classification (Mission 10) ────────────────────────────────────
   const handleScenarioSubmit = useCallback(() => {
@@ -233,6 +280,7 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     const updated = recordStageOpened(progress, stageId)
     setProgress(updated)
     saveProgress(updated)
+    pushCloudProgress(updated)
   }
 
   const nextMission = MISSIONS.find(m => m.order === mission.order + 1)
@@ -281,8 +329,9 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
           {/* Diagnosis knob */}
           {isExposed('diagnosis') && mission.diagnosisChoices && (
             <DiagnosisControl choices={mission.diagnosisChoices} value={diagnosisChoice}
-              onChange={setDiagnosisChoice} submitted={diagnosisSubmitted}
-              correct={mission.diagnosisCorrect ?? ''} onSubmit={handleDiagnosisSubmit} />
+              onChange={v => { setDiagnosisChoice(v); setDiagnosisSubmitted(false) }}
+              submitted={diagnosisSubmitted} locked={passed}
+              feedback={diagnosisFeedback} onSubmit={handleDiagnosisSubmit} />
           )}
 
           {/* Pipeline knobs */}
@@ -329,7 +378,18 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
               onChange={v => { setKnobs(k => ({ ...k, candidatePool: v })); setStale(true) }} />
           )}
           {isExposed('monitors') && (
-            <MonitorControl thresholds={monitorThresholds} onChange={setMonitorThresholds} />
+            <>
+              <MonitorControl thresholds={monitorThresholds} onChange={setMonitorThresholds} />
+              <button onClick={handleMonitorSubmit}
+                style={{
+                  marginTop: '8px', width: '100%', padding: '12px',
+                  background: accent, color: 'black', fontFamily: 'var(--font-mono)',
+                  fontSize: '12px', letterSpacing: '0.1em', fontWeight: 600,
+                  border: 'none', borderRadius: '6px', cursor: 'pointer',
+                }}>
+                RUN MONITORS →
+              </button>
+            </>
           )}
           {isExposed('policyConstraints') && (
             <KnobToggle label="ROUTING POLICY" value={knobs.policyConstraints === true}
@@ -376,9 +436,16 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
 
         {/* ── CENTRE: Pipeline Spine + Results ───────────────────────────── */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-          {/* Pipeline stages */}
-          <PipelineSpine runResult={runResult} openStage={openStage} onOpenStage={openStagePanel}
-            knobs={knobs} mission={mission} />
+          {/* Pipeline stages (M9 replays traffic instead of running the pipeline) */}
+          {!isExposed('monitors') && (
+            <PipelineSpine runResult={runResult} openStage={openStage} onOpenStage={openStagePanel}
+              knobs={knobs} mission={mission} />
+          )}
+
+          {/* Monitor traffic replay (Mission 9) */}
+          {isExposed('monitors') && (
+            <MonitorTrafficView result={monitorResult} />
+          )}
 
           {/* Eval suite view (Mission 5) */}
           {mission.id === 'mission-5' && (
@@ -399,17 +466,21 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
           {runResult && (
             <div style={{ marginTop: '16px', background: card, border: `0.5px solid ${border}`, borderRadius: '8px', padding: '14px' }}>
               <p style={{ ...monoSm(accent), marginBottom: '10px', letterSpacing: '0.12em' }}>GENERATE · OUTPUT</p>
-              {runResult.answer.claims.map((claim, i) => (
-                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: '10px', marginTop: '2px', flexShrink: 0, color: claim.isHallucinated ? badClr : goodClr }}>
-                    {claim.isHallucinated ? '✗' : '✓'}
-                  </span>
-                  <p style={{ fontSize: '13px', color: claim.isHallucinated ? `${badClr}cc` : dim, lineHeight: '1.5', fontFamily: 'var(--font-dm-sans)', fontStyle: claim.isHallucinated ? 'italic' : 'normal' }}>
-                    {claim.text}
-                    {claim.isHallucinated && <span style={{ ...monoSm(badClr), display: 'inline', marginLeft: '8px' }}>HALLUCINATED</span>}
-                  </p>
-                </div>
-              ))}
+              {runResult.answer.claims.map((claim, i) => {
+                const isBad = claim.isHallucinated || claim.isStale
+                return (
+                  <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '10px', marginTop: '2px', flexShrink: 0, color: isBad ? badClr : goodClr }}>
+                      {isBad ? '✗' : '✓'}
+                    </span>
+                    <p style={{ fontSize: '13px', color: isBad ? `${badClr}cc` : dim, lineHeight: '1.5', fontFamily: 'var(--font-dm-sans)', fontStyle: isBad ? 'italic' : 'normal' }}>
+                      {claim.text}
+                      {claim.isHallucinated && <span style={{ ...monoSm(badClr), display: 'inline', marginLeft: '8px' }}>HALLUCINATED</span>}
+                      {claim.isStale && <span style={{ ...monoSm(badClr), display: 'inline', marginLeft: '8px' }}>GROUNDED BUT WRONG</span>}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -636,6 +707,11 @@ function StageDetail({ stageId, runResult, knobs, mission }: {
             ✓ All claims grounded in retrieved context.
           </p>
         )}
+        {(gs.staleClaims ?? 0) > 0 && (
+          <p style={{ fontSize: '12px', color: warnClr, fontFamily: 'var(--font-dm-sans)', marginBottom: '8px' }}>
+            ⚠ Grounded ≠ correct: every claim faithfully matches the fed context, yet the answer contradicts the current source of truth. The problem is upstream of this stage.
+          </p>
+        )}
       </div>
     )
   }
@@ -822,13 +898,17 @@ function LockedKnob({ label: lbl, value, hidden }: { label: string; value: strin
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Diagnosis control (Missions 1, 7, 8)
+// Re-submittable until the mission passes: picking a new choice clears the last
+// verdict (parent resets `submitted`), and a wrong pick highlights only the
+// learner's choice — it never reveals the correct answer.
 // ─────────────────────────────────────────────────────────────────────────────
-function DiagnosisControl({ choices, value, onChange, submitted, correct, onSubmit }: {
+function DiagnosisControl({ choices, value, onChange, submitted, locked, feedback, onSubmit }: {
   choices: { id: string; label: string }[]
   value: string | null
   onChange: (v: string) => void
   submitted: boolean
-  correct: string
+  locked: boolean
+  feedback: { ok: boolean; text: string } | null
   onSubmit: () => void
 }) {
   return (
@@ -837,23 +917,22 @@ function DiagnosisControl({ choices, value, onChange, submitted, correct, onSubm
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
         {choices.map(c => {
           const isSelected = value === c.id
-          const isCorrect = submitted && c.id === correct
-          const isWrong = submitted && isSelected && c.id !== correct
+          const verdict = submitted && isSelected && feedback ? (feedback.ok ? 'good' : 'bad') : null
           return (
-            <button key={c.id} onClick={() => !submitted && onChange(c.id)}
+            <button key={c.id} onClick={() => !locked && onChange(c.id)}
               style={{
-                padding: '8px 10px', border: `0.5px solid ${isCorrect ? goodClr : isWrong ? badClr : isSelected ? accent : faint}`,
-                background: isCorrect ? 'rgba(200,240,64,0.1)' : isWrong ? 'rgba(240,88,74,0.08)' : isSelected ? 'rgba(200,240,64,0.06)' : 'transparent',
-                color: isCorrect ? goodClr : isWrong ? badClr : isSelected ? accent : dim,
+                padding: '8px 10px', border: `0.5px solid ${verdict === 'good' ? goodClr : verdict === 'bad' ? badClr : isSelected ? accent : faint}`,
+                background: verdict === 'good' ? 'rgba(200,240,64,0.1)' : verdict === 'bad' ? 'rgba(240,88,74,0.08)' : isSelected ? 'rgba(200,240,64,0.06)' : 'transparent',
+                color: verdict === 'good' ? goodClr : verdict === 'bad' ? badClr : isSelected ? accent : dim,
                 fontFamily: 'var(--font-dm-sans)', fontSize: '12px', textAlign: 'left',
-                borderRadius: '6px', cursor: submitted ? 'default' : 'pointer', lineHeight: '1.4',
+                borderRadius: '6px', cursor: locked ? 'default' : 'pointer', lineHeight: '1.4',
               }}>
               {c.label}
             </button>
           )
         })}
       </div>
-      {!submitted && (
+      {!submitted && !locked && (
         <button onClick={onSubmit} disabled={!value}
           style={{
             width: '100%', padding: '10px', background: value ? accent : 'rgba(200,240,64,0.2)',
@@ -863,9 +942,9 @@ function DiagnosisControl({ choices, value, onChange, submitted, correct, onSubm
           SUBMIT →
         </button>
       )}
-      {submitted && (
-        <p style={{ fontSize: '12px', color: value === correct ? goodClr : badClr, fontFamily: 'var(--font-dm-sans)', lineHeight: '1.4' }}>
-          {value === correct ? '✓ Correct. Retrieval missed the gold chunk — weak model + topK=1 meant the right context never reached generation.' : '✗ Not quite. Inspect the Retrieve stage — the gold chunk is not in the top-k.'}
+      {submitted && feedback && (
+        <p style={{ fontSize: '12px', color: feedback.ok ? goodClr : badClr, fontFamily: 'var(--font-dm-sans)', lineHeight: '1.4' }}>
+          {feedback.text}
         </p>
       )}
     </div>
@@ -876,23 +955,118 @@ function DiagnosisControl({ choices, value, onChange, submitted, correct, onSubm
 // Monitor control (Mission 9)
 // ─────────────────────────────────────────────────────────────────────────────
 function MonitorControl({ thresholds, onChange }: {
-  thresholds: { retrievalRate: number; relevance: number; faithfulness: number; cost: number }
-  onChange: (t: typeof thresholds) => void
+  thresholds: MonitorThresholds
+  onChange: (t: MonitorThresholds) => void
 }) {
   const monitors = [
-    { key: 'retrievalRate' as const, label: 'RETRIEVAL RATE', min: 0.5, max: 1, step: 0.01 },
-    { key: 'relevance' as const, label: 'RELEVANCE SCORE', min: 0.3, max: 1, step: 0.01 },
-    { key: 'faithfulness' as const, label: 'FAITHFULNESS', min: 0.5, max: 1, step: 0.01 },
-    { key: 'cost' as const, label: 'COST/RUN ALERT', min: 200, max: 2000, step: 50 },
+    { key: 'retrievalRate' as const, label: 'RETRIEVAL RATE — alert below', min: 0.5, max: 1, step: 0.01 },
+    { key: 'relevanceScore' as const, label: 'RELEVANCE — alert below', min: 0.3, max: 1, step: 0.01 },
+    { key: 'faithfulness' as const, label: 'FAITHFULNESS — alert below', min: 0.5, max: 1, step: 0.01 },
+    { key: 'costPerRun' as const, label: 'COST/RUN — alert above', min: 200, max: 2000, step: 25 },
   ]
   return (
     <div style={{ marginBottom: '14px' }}>
-      <p style={{ ...monoSm(accent), marginBottom: '10px' }}>MONITORS</p>
+      <p style={{ ...monoSm(accent), marginBottom: '10px' }}>MONITOR THRESHOLDS</p>
       {monitors.map(m => (
         <KnobSlider key={m.key} label={m.label} value={thresholds[m.key]}
           min={m.min} max={m.max} step={m.step} unit=""
           onChange={v => onChange({ ...thresholds, [m.key]: v })} />
       ))}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Monitor traffic replay (Mission 9)
+// ─────────────────────────────────────────────────────────────────────────────
+function MonitorTrafficView({ result }: { result: MonitorEvalResult | null }) {
+  const good = accent
+  const bad = '#f08078'
+  const warn = '#f0c850'
+  const cell = (v: string, color = 'rgba(255,255,255,0.65)'): React.CSSProperties => ({
+    fontFamily: 'var(--font-mono)', fontSize: '11px', color, textAlign: 'right' as const,
+  })
+
+  return (
+    <div style={{ border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '18px' }}>
+      <p style={{ ...monoSm(accent), marginBottom: '6px' }}>TWO WEEKS OF HELIX TRAFFIC</p>
+      <p style={{
+        fontSize: '12.5px', color: 'rgba(255,255,255,0.55)', marginBottom: '14px',
+        fontFamily: 'var(--font-dm-sans)', lineHeight: 1.55, maxWidth: '560px',
+      }}>
+        Three incidents are buried in this replay. Set the four thresholds so every incident
+        raises an alert — with at most one false alarm on a normal day — then run the monitors.
+        A threshold tight enough to catch everything and loose enough to stay quiet is the job.
+      </p>
+
+      <div style={{
+        display: 'grid', gridTemplateColumns: '36px 1fr 1fr 1fr 1fr 110px',
+        gap: '6px 12px', alignItems: 'center',
+      }}>
+        {['DAY', 'RETR', 'RELEV', 'FAITH', 'COST', ''].map((h, i) => (
+          <span key={i} style={{
+            fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.12em',
+            color: 'rgba(255,255,255,0.3)', textAlign: i === 0 ? 'left' : 'right',
+          }}>{h}</span>
+        ))}
+        {MONITOR_TRAFFIC.map((day, i) => {
+          const dr = result?.days[i]
+          const status = !dr ? null
+            : dr.caughtIncident ? { text: '✓ CAUGHT', color: good }
+            : dr.missedIncident ? { text: '✗ MISSED', color: bad }
+            : dr.falseAlarm ? { text: 'FALSE ALARM', color: warn }
+            : { text: '—', color: 'rgba(255,255,255,0.25)' }
+          return (
+            <div key={day.day} style={{ display: 'contents' }}>
+              <span style={{ ...cell(String(day.day), 'rgba(255,255,255,0.35)'), textAlign: 'left' }} />
+              <span style={cell(day.retrievalRate.toFixed(2))}>{day.retrievalRate.toFixed(2)}</span>
+              <span style={cell(day.relevanceScore.toFixed(2))}>{day.relevanceScore.toFixed(2)}</span>
+              <span style={cell(day.faithfulness.toFixed(2))}>{day.faithfulness.toFixed(2)}</span>
+              <span style={cell(String(day.costPerRun))}>{day.costPerRun}</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.08em',
+                color: status?.color ?? 'rgba(255,255,255,0.2)', textAlign: 'right',
+              }}>{status?.text ?? ''}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      {result && (
+        <div style={{
+          marginTop: '16px', paddingTop: '14px',
+          borderTop: '0.5px solid rgba(255,255,255,0.1)',
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.06em',
+            color: result.passed ? good : bad, marginBottom: '8px',
+          }}>
+            {result.incidentsCaught}/{result.incidentsTotal} INCIDENTS CAUGHT · {result.falseAlarms} FALSE
+            ALARM{result.falseAlarms === 1 ? '' : 'S'} · {result.passed ? 'MONITORS HOLD' : 'NOT YET'}
+          </p>
+          {result.days.filter(d => d.caughtIncident || d.missedIncident).map(d => (
+            <p key={d.day.day} style={{
+              fontSize: '12px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5,
+              fontFamily: 'var(--font-dm-sans)', marginBottom: '4px',
+            }}>
+              <span style={{ color: d.caughtIncident ? good : bad, fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
+                DAY {d.day.day} —{' '}
+              </span>
+              {d.day.incident}
+            </p>
+          ))}
+          {!result.passed && (
+            <p style={{
+              fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5,
+              fontFamily: 'var(--font-dm-sans)', marginTop: '8px',
+            }}>
+              {result.incidentsCaught < result.incidentsTotal
+                ? 'A missed incident means a threshold is too loose for the metric it watches — find the day and look at which number moved.'
+                : 'Every incident is caught but the alert stream is too noisy — a monitor nobody trusts is a monitor nobody reads. Loosen the threshold that keeps crying wolf.'}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

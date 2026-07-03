@@ -13,6 +13,8 @@ import {
   ExerciseLeadIn,
   ExerciseSoon,
 } from '@/components/courses/lesson-helpers'
+import { Exercise } from '@/components/courses/exercise'
+import { EVALS_EXERCISES } from '@/lib/courses/exercises/evals-foundations'
 
 // ── Lesson 2 ─────────────────────────────────────────────────────────────────
 
@@ -193,7 +195,7 @@ export function Lesson2Body() {
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Why your QA instincts will fail you" />
+      <Exercise spec={EVALS_EXERCISES['lesson-2']} />
     </div>
   )
 }
@@ -391,7 +393,7 @@ E5 [Ambiguous intent]: "Something seems off with my dashboard today"`}</CodeBloc
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Generating diverse test inputs" />
+      <Exercise spec={EVALS_EXERCISES['lesson-3']} />
     </div>
   )
 }
@@ -575,7 +577,7 @@ DIMENSION 5: Multi-issue handling
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Labeling outputs and writing your first rubric" />
+      <Exercise spec={EVALS_EXERCISES['lesson-4']} />
     </div>
   )
 }
@@ -747,7 +749,7 @@ PATTERN 5: Stale-policy classification
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Finding failure patterns" />
+      <Exercise spec={EVALS_EXERCISES['lesson-5']} />
     </div>
   )
 }
@@ -921,7 +923,7 @@ Human layer (runs on flagged or low-confidence cases):
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="From rubric to deterministic checks" />
+      <Exercise spec={EVALS_EXERCISES['lesson-6']} />
     </div>
   )
 }
@@ -1112,7 +1114,7 @@ Never: the same model that produced the output.
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="LLM-as-judge done right" />
+      <Exercise spec={EVALS_EXERCISES['lesson-7']} />
     </div>
   )
 }
@@ -1269,7 +1271,7 @@ Tally: if winning prompt has >55% wins on >100 cases, ship it.`}</CodeBlock>
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Pairwise vs absolute scoring" />
+      <Exercise spec={EVALS_EXERCISES['lesson-8']} />
     </div>
   )
 }
@@ -1470,7 +1472,7 @@ SUSTAINED DRIFT (alert, don't page):
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Online monitoring and drift detection" />
+      <Exercise spec={EVALS_EXERCISES['lesson-9']} />
     </div>
   )
 }
@@ -1690,7 +1692,7 @@ What we'll add to monitoring
         </p>
       </ExerciseLeadIn>
 
-      <ExerciseSoon lessonTitle="Tracing failures to root cause" />
+      <Exercise spec={EVALS_EXERCISES['lesson-10']} />
     </div>
   )
 }

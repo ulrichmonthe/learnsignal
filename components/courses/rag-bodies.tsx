@@ -12,6 +12,8 @@ import {
   Section,
   SubHead,
 } from '@/components/courses/lesson-helpers'
+import { Exercise } from '@/components/courses/exercise'
+import { RAG_EXERCISES } from '@/lib/courses/exercises/rag'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -194,7 +196,7 @@ export function RAGLesson1Body() {
         get it wrong.
       </Lead>
 
-      <ExerciseSoon lessonTitle="The knowledge cutoff is the least of your problems." />
+      <Exercise spec={RAG_EXERCISES['lesson-1']} />
     </div>
   )
 }
@@ -254,7 +256,7 @@ export function RAGLesson2Body() {
         but only if the retrieval half of the pipeline actually finds the right things.
       </Lead>
 
-      <ExerciseSoon lessonTitle="What RAG is, and what it isn't." />
+      <Exercise spec={RAG_EXERCISES['lesson-2']} />
     </div>
   )
 }
@@ -320,7 +322,7 @@ export function RAGLesson3Body() {
         parts of the stack.
       </Lead>
 
-      <ExerciseSoon lessonTitle="The three failure modes that kill RAG systems." />
+      <Exercise spec={RAG_EXERCISES['lesson-3']} />
     </div>
   )
 }
@@ -439,6 +441,7 @@ KNOWN EDGE CASES:
           two edge cases, and note one alternative you considered and rejected.
         </p>
       </ExerciseLeadIn>
+      <Exercise spec={RAG_EXERCISES['lesson-4']} />
     </div>
   )
 }
@@ -510,7 +513,7 @@ export function RAGLesson5Body() {
         production RAG systems end up.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Dense, sparse, and hybrid retrieval: when each wins." />
+      <Exercise spec={RAG_EXERCISES['lesson-5']} />
     </div>
   )
 }
@@ -575,7 +578,7 @@ export function RAGLesson6Body() {
         faithfulness scores without requiring any changes to the index or embedding model.
       </Lead>
 
-      <ExerciseSoon lessonTitle="When to add a reranking layer." />
+      <Exercise spec={RAG_EXERCISES['lesson-6']} />
     </div>
   )
 }
@@ -692,6 +695,7 @@ EVALUATION CADENCE
           would use to gate an index rebuild.
         </p>
       </ExerciseLeadIn>
+      <Exercise spec={RAG_EXERCISES['lesson-7']} />
     </div>
   )
 }
@@ -761,7 +765,7 @@ export function RAGLesson8Body() {
         with high confidence.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Embedding models: what makes one better for your use case." />
+      <Exercise spec={RAG_EXERCISES['lesson-8']} />
     </div>
   )
 }
@@ -828,7 +832,7 @@ export function RAGLesson9Body() {
         before designing the pipeline.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Index freshness and the stale knowledge problem." />
+      <Exercise spec={RAG_EXERCISES['lesson-9']} />
     </div>
   )
 }
@@ -893,7 +897,7 @@ export function RAGLesson10Body() {
         that improve over time from teams that keep debugging the same problem in different forms.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Query drift: when users ask what your index wasn't built for." />
+      <Exercise spec={RAG_EXERCISES['lesson-10']} />
     </div>
   )
 }
@@ -1013,6 +1017,7 @@ SIGNAL 4: CONFIDENCE CALIBRATION
           responding to each alert.
         </p>
       </ExerciseLeadIn>
+      <Exercise spec={RAG_EXERCISES['lesson-11']} />
     </div>
   )
 }
@@ -1075,7 +1080,7 @@ export function RAGLesson12Body() {
         not because RAG is always right.
       </Lead>
 
-      <ExerciseSoon lessonTitle="When to move beyond RAG: fine-tuning, hybrid, or long context." />
+      <Exercise spec={RAG_EXERCISES['lesson-12']} />
     </div>
   )
 }
@@ -1141,7 +1146,7 @@ export function RAGLesson13Body() {
         cover the specific decisions that policy requires.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Retrieval is now a decision the system makes, not you." />
+      <Exercise spec={RAG_EXERCISES['lesson-13']} />
     </div>
   )
 }
@@ -1207,7 +1212,7 @@ export function RAGLesson14Body() {
         policy — the logic that decides which tool to call for which query class.
       </Lead>
 
-      <ExerciseSoon lessonTitle="The retrieval-strategy decision: vector is no longer the default." />
+      <Exercise spec={RAG_EXERCISES['lesson-14']} />
     </div>
   )
 }
@@ -1272,7 +1277,7 @@ export function RAGLesson15Body() {
         poor retrieval decisions got lucky — and will fail unpredictably. You need both signals.
       </Lead>
 
-      <ExerciseSoon lessonTitle="Evaluating systems that retrieve more than once." />
+      <Exercise spec={RAG_EXERCISES['lesson-15']} />
     </div>
   )
 }
@@ -1387,6 +1392,7 @@ COST REDUCTION VS FULL RETRIEVAL ON EVERY QUERY: 52%`}
           full-retrieval-on-every-query baseline. This is your final artifact.
         </p>
       </ExerciseLeadIn>
+      <Exercise spec={RAG_EXERCISES['lesson-16']} />
     </div>
   )
 }

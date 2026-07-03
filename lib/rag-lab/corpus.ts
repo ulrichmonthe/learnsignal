@@ -325,3 +325,12 @@ export function getCorpusForMission(injection: string): Document[] {
   }
   return CORPUS
 }
+
+// Documents whose INDEXED version predates the current source of truth under a
+// given injection. The Mission 7 index snapshot is from 2024-03: at that point
+// payout timing was still "5 business days", so answers grounded in the indexed
+// payout docs are faithful to their context yet wrong today (generate.ts emits
+// the stale distractor for claims supported by these docs).
+export function getStaleDocIds(injection: string): string[] {
+  return injection === 'staleIndex' ? ['doc-payouts', 'doc-api-changelog'] : []
+}

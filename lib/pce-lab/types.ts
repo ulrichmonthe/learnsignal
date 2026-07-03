@@ -43,7 +43,6 @@ export type EvalCriterion =
   | 'has-rules-section'
   | 'has-uncertainty-section'
   | 'no-hallucination-rule'
-  | 'uses-xml-structure'
   | 'injection-defense'
   | 'spotlighting'
   | 'sycophancy-defense'
@@ -104,7 +103,6 @@ export interface Mission {
   tierLabel: string
   lessonRef: number
   targetScore: number
-  attemptsAllowed: number | 'unlimited'
   weights: { w1: number; w2: number; w3: number }
   character: CharacterName
   brief: string

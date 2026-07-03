@@ -19,8 +19,15 @@ export async function POST(req: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { abstract, productType } = await req.json()
-  if (!abstract) return NextResponse.json({ error: 'abstract required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  const abstract = body?.abstract
+  const productType = typeof body?.productType === 'string' ? body.productType.slice(0, 200) : undefined
+  if (typeof abstract !== 'string' || !abstract.trim()) {
+    return NextResponse.json({ error: 'abstract required' }, { status: 400 })
+  }
+  if (abstract.length > 50_000) {
+    return NextResponse.json({ error: 'abstract too long (max 50,000 chars)' }, { status: 400 })
+  }
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5',

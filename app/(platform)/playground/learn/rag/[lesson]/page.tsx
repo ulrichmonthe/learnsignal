@@ -5,9 +5,12 @@ import {
   getAdjacentRAGLessons,
   RAG_COURSE,
   RAG_ARTIFACT_PREVIEWS,
+  ALL_RAG_LESSONS,
 } from '@/lib/courses/rag'
 import ModuleNav from '@/components/courses/module-nav'
 import ArtifactPanel from '@/components/courses/artifact-panel'
+import { getCourseProgress } from '@/lib/learn/progress'
+import { LessonComplete } from '@/components/courses/lesson-complete'
 import {
   RAGLesson1Body,
   RAGLesson2Body,
@@ -61,6 +64,9 @@ export default async function RAGLessonPage({ params }: PageProps) {
 
   if (!LessonBody) notFound()
 
+  const progress = await getCourseProgress('rag')
+  const totalLessons = ALL_RAG_LESSONS.length
+
   return (
     <div className="min-h-[calc(100vh-57px)]">
       <div className="flex max-w-[1200px] mx-auto px-4 pt-10 pb-24 gap-0">
@@ -75,7 +81,7 @@ export default async function RAGLessonPage({ params }: PageProps) {
             courseSlug="rag"
             backLabel="RAG Course"
             currentSlug={lessonSlug}
-            completedSlugs={[]}
+            completedSlugs={progress.completedSlugs}
           />
         </aside>
 
@@ -127,6 +133,15 @@ export default async function RAGLessonPage({ params }: PageProps) {
 
           {/* Lesson body */}
           <LessonBody />
+
+          {/* Mark complete + continue */}
+          <LessonComplete
+            courseSlug="rag"
+            lessonSlug={lessonSlug}
+            total={totalLessons}
+            nextHref={next ? `/playground/learn/rag/${next.slug}` : null}
+            initiallyComplete={progress.completedSlugs.includes(lessonSlug)}
+          />
 
           {/* ── Bottom navigation ───────────────────────────────── */}
           <div

@@ -1,8 +1,15 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { MISSIONS } from '@/lib/pce-lab/missions'
 import type { MissionTier } from '@/lib/pce-lab/types'
+import {
+  loadProgress,
+  saveProgress,
+  fetchCloudProgress,
+  type PCEProgress,
+} from '@/lib/pce-lab/persist'
 
 const TIER_META: Record<MissionTier, { label: string; color: string; description: string }> = {
   'the-shift': {
@@ -42,6 +49,23 @@ const CHARACTER_LABEL: Record<string, string> = {
 }
 
 export default function PCELabPage() {
+  const [progress, setProgress] = useState<PCEProgress | null>(null)
+
+  useEffect(() => {
+    setProgress(loadProgress())
+    // Pull the account's progress (source of truth across devices) and cache it.
+    fetchCloudProgress().then(cloud => {
+      if (cloud) {
+        setProgress(cloud)
+        saveProgress(cloud)
+      }
+    })
+  }, [])
+
+  const isCompleted = (missionId: string) =>
+    progress?.missions[missionId]?.completed ?? false
+  const completedCount = MISSIONS.filter(m => isCompleted(m.id)).length
+
   const grouped = TIER_ORDER.map(tier => ({
     tier,
     meta: TIER_META[tier],
@@ -102,9 +126,10 @@ export default function PCELabPage() {
         >
           {[
             { label: 'Missions', value: '10' },
+            { label: 'Completed', value: `${completedCount} / 10` },
             { label: 'Tiers', value: '4' },
             { label: 'Test tickets', value: String(MISSIONS.reduce((s, m) => s + m.tickets.length, 0)) },
-            { label: 'Eval criteria', value: '20' },
+            { label: 'Eval criteria', value: '19' },
           ].map(({ label, value }) => (
             <div key={label}>
               <p className="font-display font-medium" style={{ fontSize: '20px', color: 'rgba(255,255,255,0.85)' }}>
@@ -183,12 +208,12 @@ export default function PCELabPage() {
                         >
                           {mission.title}
                         </h3>
-                        {mission.attemptsAllowed !== 'unlimited' && (
+                        {isCompleted(mission.id) && (
                           <span
                             className="font-mono rounded px-1.5"
-                            style={{ fontSize: '8px', color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '0.5px solid rgba(245,158,11,0.2)' }}
+                            style={{ fontSize: '8px', color: 'var(--accent)', background: 'rgba(200,240,64,0.08)', border: '0.5px solid rgba(200,240,64,0.25)', letterSpacing: '0.08em' }}
                           >
-                            {mission.attemptsAllowed} attempts
+                            COMPLETE ✓
                           </span>
                         )}
                       </div>
@@ -261,7 +286,7 @@ export default function PCELabPage() {
         <div className="mt-4 pt-6" style={{ borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-dm-sans)', lineHeight: '1.6' }}>
             Scoring is deterministic — no LLM calls in Phase A. The eval engine checks structural properties of your
-            prompt and context blueprint against 20 criteria. Real LLM evaluation is Phase B.
+            prompt and context blueprint against 19 criteria. Real LLM evaluation is Phase B.
           </p>
         </div>
 

@@ -75,6 +75,9 @@ export interface GeneratedClaim {
   text: string
   supportedBySpan: Span | null  // null = hallucinated
   isHallucinated: boolean
+  /** Grounded in a fed chunk, but the chunk comes from a stale document version
+   *  (Mission 7 injection) — the claim is faithful to its context yet WRONG. */
+  isStale?: boolean
 }
 
 export interface GeneratedAnswer {
@@ -92,9 +95,11 @@ export interface RetrievalScore {
 }
 
 export interface GenerationScore {
-  correctness: number        // fraction of gold claims present & supported
+  correctness: number        // fraction of gold claims present, supported AND current
   groundedness: number       // fraction of answer claims that are supported
   hallucinatedClaims: number
+  /** Claims grounded in a stale document version — grounded but wrong (M7). */
+  staleClaims?: number
 }
 
 export interface HopResult {

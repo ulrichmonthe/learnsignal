@@ -12,11 +12,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { session_id, slot_number, label, note } = body
+  const body = await req.json().catch(() => null)
+  const { session_id, slot_number, label, note } = body ?? {}
 
-  if (!session_id || !slot_number || !label) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  if (
+    typeof session_id !== 'string' ||
+    typeof slot_number !== 'number' || !Number.isInteger(slot_number) ||
+    slot_number < 1 || slot_number > 20 ||
+    typeof label !== 'string'
+  ) {
+    return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 })
   }
 
   if (!['PASS', 'NEEDS_EDITS', 'FAIL'].includes(label)) {

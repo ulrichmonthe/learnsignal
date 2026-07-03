@@ -111,3 +111,71 @@ export function resetProgress(): void {
   if (!isClient()) return
   localStorage.removeItem(PROGRESS_KEY)
 }
+
+// ── Cloud sync (per Clerk account) ────────────────────────────────────────────
+// localStorage is the fast local cache; the account (Supabase) is the source of
+// truth that follows the user across devices.
+
+const LAB = 'raglab'
+
+// Two devices (or tabs) can hold different progress; never let one clobber the
+// other — take the union, keeping the best result per mission.
+function mergeProgress(local: GameProgress, cloud: GameProgress): GameProgress {
+  const missions: GameProgress['missions'] = { ...cloud.missions }
+  for (const [id, m] of Object.entries(local.missions)) {
+    const c = missions[id]
+    missions[id] = !c
+      ? m
+      : {
+          bestScore: Math.max(c.bestScore, m.bestScore),
+          rating: c.bestScore >= m.bestScore ? c.rating : m.rating,
+          attempts: Math.max(c.attempts, m.attempts),
+          completed: c.completed || m.completed,
+        }
+  }
+  return {
+    missions,
+    totalXP: Math.max(local.totalXP, cloud.totalXP),
+    level: Math.max(local.level, cloud.level),
+    streak: Math.max(local.streak, cloud.streak),
+    lastActiveDate:
+      local.lastActiveDate > cloud.lastActiveDate ? local.lastActiveDate : cloud.lastActiveDate,
+    badges: { ...cloud.badges, ...local.badges },
+    artifacts: { ...cloud.artifacts, ...local.artifacts },
+    seenStages: new Set([...cloud.seenStages, ...local.seenStages]),
+  }
+}
+
+export async function fetchCloudProgress(): Promise<GameProgress | null> {
+  if (!isClient()) return null
+  try {
+    const res = await fetch(`/api/playground/progress?lab=${LAB}`, {
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const json = await res.json()
+    const d = json?.data as (Omit<GameProgress, 'seenStages'> & { seenStages?: string[] }) | null
+    if (!d || !d.missions) return null
+    const cloud: GameProgress = { ...d, seenStages: new Set(d.seenStages ?? []) }
+    const merged = mergeProgress(loadProgress(), cloud)
+    // If local knew things the cloud didn't, sync the union back up.
+    if (Object.keys(merged.missions).length > Object.keys(cloud.missions).length ||
+        merged.totalXP > cloud.totalXP) {
+      pushCloudProgress(merged)
+    }
+    return merged
+  } catch {
+    return null
+  }
+}
+
+export function pushCloudProgress(progress: GameProgress): void {
+  if (!isClient()) return
+  const serializable = { ...progress, seenStages: Array.from(progress.seenStages) }
+  // fire-and-forget; localStorage already holds the authoritative local copy
+  fetch('/api/playground/progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lab: LAB, data: serializable }),
+  }).catch(() => {})
+}

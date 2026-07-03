@@ -1,10 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { useCourseProgress, CourseCTA, LessonNumber } from '@/components/courses/course-progress'
 import { EVALS_COURSE } from '@/lib/courses/evals-foundations'
 
 export default function EvalsFoundationsPage() {
   const totalLessons = EVALS_COURSE.modules.reduce((sum, m) => sum + m.lessons.length, 0)
+  const completedSlugs = useCourseProgress('evals-foundations')
+  const orderedSlugs = EVALS_COURSE.modules.flatMap(m => m.lessons.map(l => l.slug))
 
   return (
     <div className="min-h-[calc(100vh-57px)]">
@@ -55,19 +58,7 @@ export default function EvalsFoundationsPage() {
           </p>
 
           <div className="mt-6">
-            <Link
-              href="/playground/learn/evals-foundations/lesson-1"
-              className="inline-block font-mono font-medium text-black hover:opacity-90 transition-opacity"
-              style={{
-                fontSize: '12px',
-                letterSpacing: '0.08em',
-                background: 'var(--accent)',
-                padding: '12px 22px',
-                borderRadius: '8px',
-              }}
-            >
-              START WITH LESSON 1 →
-            </Link>
+            <CourseCTA hrefBase="/playground/learn/evals-foundations" orderedSlugs={orderedSlugs} completedSlugs={completedSlugs} />
           </div>
         </div>
 
@@ -115,16 +106,7 @@ export default function EvalsFoundationsPage() {
                     }}
                   >
                     {/* Lesson number */}
-                    <span
-                      className="font-mono flex-shrink-0"
-                      style={{
-                        fontSize: '11px',
-                        color: 'rgba(255,255,255,0.2)',
-                        width: '28px',
-                      }}
-                    >
-                      {String(lesson.lessonNumber).padStart(2, '0')}
-                    </span>
+                    <LessonNumber number={lesson.lessonNumber} done={completedSlugs.includes(lesson.slug)} />
 
                     {/* Lesson title */}
                     <div style={{ flex: 1 }}>

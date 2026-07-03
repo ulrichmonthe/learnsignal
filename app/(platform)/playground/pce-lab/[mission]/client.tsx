@@ -1,9 +1,17 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getMissionById } from '@/lib/pce-lab/missions'
-import { scoreState } from '@/lib/pce-lab/scoring'
+import { scoreState, isMissionComplete } from '@/lib/pce-lab/scoring'
+import {
+  loadProgress,
+  saveProgress,
+  recordMissionComplete,
+  fetchCloudProgress,
+  pushCloudProgress,
+  type PCEProgress,
+} from '@/lib/pce-lab/persist'
 import type {
   AtlasPromptState,
   FewShotExample,
@@ -52,9 +60,22 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     mission.startingState.contextBlueprint.map(r => ({ ...r }))
   )
 
-  // ── Versions / attempts ──────────────────────────────────────────────────────
+  // ── Versions ─────────────────────────────────────────────────────────────────
   const [versions, setVersions] = useState<SavedVersion[]>([])
-  const [attemptCount, setAttemptCount] = useState(0)
+
+  // ── Persisted progress (localStorage + cloud) ────────────────────────────────
+  const [progress, setProgress] = useState<PCEProgress | null>(null)
+
+  useEffect(() => {
+    setProgress(loadProgress())
+    // Pull the account's progress (source of truth across devices) and cache it.
+    fetchCloudProgress().then(cloud => {
+      if (cloud) {
+        setProgress(cloud)
+        saveProgress(cloud)
+      }
+    })
+  }, [])
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
@@ -72,7 +93,18 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     [currentState, mission]
   )
 
-  const missionComplete = score.composite >= mission.targetScore
+  const missionComplete = isMissionComplete(score, mission, versions.length)
+
+  // Record completion once progress is hydrated; keep the best score ratcheted.
+  useEffect(() => {
+    if (!missionComplete || progress === null) return
+    const existing = progress.missions[mission.id]
+    if (existing?.completed && existing.bestScore >= score.composite) return
+    const next = recordMissionComplete(progress, mission.id, score.composite)
+    setProgress(next)
+    saveProgress(next)
+    pushCloudProgress(next)
+  }, [missionComplete, progress, mission.id, score.composite])
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   const updatePromptField = useCallback(
@@ -83,12 +115,6 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
   )
 
   function saveVersion() {
-    const canAttempt =
-      mission.attemptsAllowed === 'unlimited' ||
-      attemptCount < (mission.attemptsAllowed as number)
-
-    if (!canAttempt) return
-
     const versionNum = versions.length + 1
     const newVersion: SavedVersion = {
       id: `v-${Date.now()}`,
@@ -103,14 +129,9 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
     }
 
     setVersions(prev => [...prev, newVersion])
-    setAttemptCount(prev => prev + 1)
     setSaveLabel('SAVED ✓')
     setTimeout(() => setSaveLabel('SAVE VERSION'), 1800)
   }
-
-  const attemptsExhausted =
-    mission.attemptsAllowed !== 'unlimited' &&
-    attemptCount >= (mission.attemptsAllowed as number)
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -203,37 +224,23 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
           </div>
         )}
 
-        {/* Save / attempt button */}
+        {/* Save version button */}
         <button
           onClick={saveVersion}
-          disabled={attemptsExhausted}
           className="flex-shrink-0 font-mono rounded px-3 py-1 transition-all"
           style={{
             fontSize: '9px',
             letterSpacing: '0.12em',
-            color: attemptsExhausted
-              ? 'rgba(255,255,255,0.2)'
-              : saveLabel === 'SAVED ✓'
-              ? 'var(--accent)'
-              : 'rgba(255,255,255,0.5)',
-            background: attemptsExhausted
-              ? 'rgba(255,255,255,0.02)'
-              : saveLabel === 'SAVED ✓'
-              ? 'rgba(200,240,64,0.08)'
-              : 'rgba(255,255,255,0.04)',
+            color: saveLabel === 'SAVED ✓' ? 'var(--accent)' : 'rgba(255,255,255,0.5)',
+            background:
+              saveLabel === 'SAVED ✓' ? 'rgba(200,240,64,0.08)' : 'rgba(255,255,255,0.04)',
             border: `0.5px solid ${
-              attemptsExhausted
-                ? 'rgba(255,255,255,0.06)'
-                : saveLabel === 'SAVED ✓'
-                ? 'rgba(200,240,64,0.25)'
-                : 'rgba(255,255,255,0.12)'
+              saveLabel === 'SAVED ✓' ? 'rgba(200,240,64,0.25)' : 'rgba(255,255,255,0.12)'
             }`,
-            cursor: attemptsExhausted ? 'default' : 'pointer',
+            cursor: 'pointer',
           }}
         >
-          {attemptsExhausted
-            ? `LIMIT REACHED (${mission.attemptsAllowed})`
-            : saveLabel}
+          {saveLabel}
         </button>
       </div>
 
@@ -317,8 +324,6 @@ function MissionWorkspace({ mission }: { mission: Mission }) {
             score={score}
             targetScore={mission.targetScore}
             versions={versions}
-            attemptCount={attemptCount}
-            attemptsAllowed={mission.attemptsAllowed}
             missionComplete={missionComplete}
             completionSynthesis={mission.completionSynthesis}
           />

@@ -6,8 +6,6 @@ interface Props {
   score: ScoreResult
   targetScore: number
   versions: SavedVersion[]
-  attemptCount: number
-  attemptsAllowed: number | 'unlimited'
   missionComplete: boolean
   completionSynthesis: string
 }
@@ -53,8 +51,6 @@ export default function ScoreDashboard({
   score,
   targetScore,
   versions,
-  attemptCount,
-  attemptsAllowed,
   missionComplete,
   completionSynthesis,
 }: Props) {
@@ -137,16 +133,13 @@ export default function ScoreDashboard({
 
       <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.07)', marginBottom: '16px' }} />
 
-      {/* Attempt counter */}
+      {/* Saved versions counter */}
       <div className="flex items-center justify-between mb-4">
         <span className="font-mono uppercase" style={{ fontSize: '9px', letterSpacing: '0.14em', color: 'rgba(255,255,255,0.3)' }}>
-          Attempts
+          Versions saved
         </span>
         <span className="font-mono" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
-          {attemptCount}{attemptsAllowed !== 'unlimited' ? ` / ${attemptsAllowed}` : ''}
-          {attemptsAllowed === 'unlimited' && (
-            <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '4px' }}>unlimited</span>
-          )}
+          {versions.length}
         </span>
       </div>
 

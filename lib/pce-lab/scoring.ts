@@ -26,7 +26,7 @@ interface CriterionResult {
   note: string
 }
 
-function checkCriterion(
+export function checkCriterion(
   criterion: EvalCriterion,
   state: MissionState
 ): CriterionResult {
@@ -54,15 +54,6 @@ function checkCriterion(
       return pass
         ? { pass: true, note: 'Anti-hallucination rule detected in rules section.' }
         : { pass: false, note: 'No explicit anti-hallucination rule found in rules section.' }
-    }
-
-    case 'uses-xml-structure': {
-      // Check if rules has at least 2 lines starting with "-"
-      const dashLines = prompt.rules.split('\n').filter((l) => l.trim().startsWith('-'))
-      const pass = dashLines.length >= 2
-      return pass
-        ? { pass: true, note: 'Rules use structured bullet list format.' }
-        : { pass: false, note: 'Rules should use at least 2 bullet points (lines starting with -).' }
     }
 
     case 'injection-defense': {
@@ -156,13 +147,16 @@ function checkCriterion(
       const docsIdx = bp.findIndex((r) =>
         /help-center|docs/i.test(r.source)
       )
+      // The question row is the row whose source mentions "question" —
+      // NOT "user" (which would falsely match "User profile").
       const questionIdx = bp.findIndex((r) =>
-        /question|user/i.test(r.source)
+        /question/i.test(r.source)
       )
       if (docsIdx === -1) {
         return { pass: false, note: 'No help-center/docs row found in blueprint.' }
       }
-      const pass = docsIdx < questionIdx && docsIdx < bp.length - 2
+      const pass =
+        (questionIdx === -1 || docsIdx < questionIdx) && docsIdx < bp.length - 2
       return pass
         ? { pass: true, note: 'Docs are positioned before the question and not at the end of the window.' }
         : {
@@ -240,12 +234,20 @@ function checkCriterion(
       if (!row) {
         return { pass: false, note: 'No help-center/docs row found in blueprint.' }
       }
-      const pass = /rerank/i.test(row.notes)
+      // "rerank" must be mentioned AND not negated ("no reranking",
+      // "without reranking", "reranking disabled" all fail).
+      const mentions = /rerank/i.test(row.notes)
+      const negated =
+        /\b(?:no|not|without|never|disabled?)\b[^.,;]{0,20}\brerank/i.test(row.notes) ||
+        /\brerank\w*\s+(?:is\s+)?(?:not|disabled|off)\b/i.test(row.notes)
+      const pass = mentions && !negated
       return pass
         ? { pass: true, note: 'Retrieval notes indicate reranking is applied.' }
         : {
             pass: false,
-            note: 'No reranking mentioned in docs blueprint notes. Add reranking to improve chunk relevance.',
+            note: mentions
+              ? 'Docs blueprint notes say reranking is NOT applied. Enable reranking to improve chunk relevance.'
+              : 'No reranking mentioned in docs blueprint notes. Add reranking to improve chunk relevance.',
           }
     }
 
@@ -256,15 +258,21 @@ function checkCriterion(
       if (!row) {
         return { pass: false, note: 'No help-center/docs row found in blueprint.' }
       }
-      const chunkMatch = row.budget.match(/[1-5]\s*(chunk|doc)/i)
-      const numMatch = row.budget.match(/\d+/)
-      const numVal = numMatch ? parseInt(numMatch[0], 10) : null
-      const pass = chunkMatch !== null || (numVal !== null && numVal <= 5)
+      // Read the chunk count from budget OR notes ("3–5 chunks", "12 chunks
+      // retrieved", "top 5 docs"). Token figures like "~1500t" are budgets,
+      // not chunk counts, and are ignored. Ranges use their upper bound.
+      const text = `${row.budget} ${row.notes}`
+      const counts = [...text.matchAll(/(\d+)(?:\s*(?:[–—-]|to)\s*(\d+))?\s*(?:chunks?|docs?)\b/gi)]
+        .map((m) => parseInt(m[2] ?? m[1], 10))
+      const pass = counts.length > 0 && Math.max(...counts) <= 5
       return pass
         ? { pass: true, note: 'Retrieval budget is ≤ 5 chunks.' }
         : {
             pass: false,
-            note: `Retrieval budget appears to exceed 5 chunks (budget: "${row.budget}"). Reduce to 3–5 high-signal chunks.`,
+            note:
+              counts.length === 0
+                ? `No chunk count found in the docs row (budget: "${row.budget}"). State a retrieval budget of 3–5 chunks.`
+                : `Retrieval budget exceeds 5 chunks (budget: "${row.budget}", notes: "${row.notes}"). Reduce to 3–5 high-signal chunks.`,
           }
     }
 
@@ -395,6 +403,21 @@ function calcProductionSafety(state: MissionState): number {
 // ---------------------------------------------------------------------------
 // Main scoring function
 // ---------------------------------------------------------------------------
+
+// Completion rule. A mission is complete when the live composite meets the
+// target — except when the mission's *starting* state already meets it (the
+// orientation mission), in which case the learner must take the real action
+// the brief asks for: saving at least one version.
+export function isMissionComplete(
+  score: ScoreResult,
+  mission: Mission,
+  versionsSaved: number
+): boolean {
+  if (score.composite < mission.targetScore) return false
+  const baseline = scoreState(mission.startingState, mission)
+  if (baseline.composite >= mission.targetScore) return versionsSaved > 0
+  return true
+}
 
 export function scoreState(state: MissionState, mission: Mission): ScoreResult {
   const ticketResults: TicketResult[] = mission.tickets.map((ticket) =>

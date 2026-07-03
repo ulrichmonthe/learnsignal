@@ -18,7 +18,11 @@ function chunkFullyContainsSpan(
   )
 }
 
-export function generate(query: Query, fedChunks: Chunk[]): GeneratedAnswer {
+export function generate(
+  query: Query,
+  fedChunks: Chunk[],
+  staleDocIds: string[] = [],
+): GeneratedAnswer {
   const claims: GeneratedClaim[] = query.goldClaims.map(goldClaim => {
     // Find the first fedChunk that fully contains the claim's goldSpan
     const supportingChunk = fedChunks.find(c =>
@@ -26,6 +30,17 @@ export function generate(query: Query, fedChunks: Chunk[]): GeneratedAnswer {
     )
 
     if (supportingChunk) {
+      // Stale index (Mission 7): the supporting chunk exists and the answer is
+      // faithfully grounded in it — but the indexed document version is out of
+      // date, so what comes out is the superseded fact. NOT a hallucination.
+      if (staleDocIds.includes(supportingChunk.docId)) {
+        return {
+          text: goldClaim.distractorText,
+          supportedBySpan: goldClaim.goldSpan,
+          isHallucinated: false,
+          isStale: true,
+        }
+      }
       return {
         text: goldClaim.text,
         supportedBySpan: goldClaim.goldSpan,

@@ -4,9 +4,12 @@ import {
   getLessonBySlug,
   getAdjacentLessons,
   EVALS_COURSE,
+  ALL_LESSONS,
 } from '@/lib/courses/evals-foundations'
 import ModuleNav from '@/components/courses/module-nav'
 import ArtifactPanel from '@/components/courses/artifact-panel'
+import { getCourseProgress } from '@/lib/learn/progress'
+import { LessonComplete } from '@/components/courses/lesson-complete'
 import {
   Lesson2Body,
   Lesson3Body,
@@ -51,6 +54,9 @@ export default async function LessonPage({ params }: PageProps) {
 
   if (!LessonBody) notFound()
 
+  const progress = await getCourseProgress('evals-foundations')
+  const totalLessons = ALL_LESSONS.length
+
   return (
     <div className="min-h-[calc(100vh-57px)]">
       <div className="flex max-w-[1200px] mx-auto px-4 pt-10 pb-24 gap-0">
@@ -65,7 +71,7 @@ export default async function LessonPage({ params }: PageProps) {
             courseSlug="evals-foundations"
             backLabel="Evals Foundations"
             currentSlug={lessonSlug}
-            completedSlugs={[]}
+            completedSlugs={progress.completedSlugs}
           />
         </aside>
 
@@ -117,6 +123,15 @@ export default async function LessonPage({ params }: PageProps) {
 
           {/* Lesson body */}
           <LessonBody />
+
+          {/* Mark complete + continue */}
+          <LessonComplete
+            courseSlug="evals-foundations"
+            lessonSlug={lessonSlug}
+            total={totalLessons}
+            nextHref={next ? `/playground/learn/evals-foundations/${next.slug}` : null}
+            initiallyComplete={progress.completedSlugs.includes(lessonSlug)}
+          />
 
           {/* ── Bottom navigation ──────────────────────────────── */}
           <div

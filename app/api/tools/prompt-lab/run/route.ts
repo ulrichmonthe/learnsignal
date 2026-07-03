@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server'
 const MONTHLY_LIMIT_INDIVIDUAL = 50
 const MAX_PROMPT_CHARS = 10_000
 const MAX_OUTPUT_TOKENS = 1024
+const ALLOWED_MODELS = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5'])
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -17,11 +18,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
   const { systemPrompt, userPrompt, temperature = 1, modelId = 'claude-sonnet-4-6' } = body
 
-  if (!userPrompt) {
+  if (typeof userPrompt !== 'string' || !userPrompt) {
     return NextResponse.json({ error: 'userPrompt required' }, { status: 400 })
+  }
+  if (!ALLOWED_MODELS.has(modelId)) {
+    return NextResponse.json({ error: 'Unknown model' }, { status: 400 })
+  }
+  if (typeof temperature !== 'number' || temperature < 0 || temperature > 1) {
+    return NextResponse.json({ error: 'temperature must be between 0 and 1' }, { status: 400 })
   }
   if (
     (systemPrompt?.length ?? 0) > MAX_PROMPT_CHARS ||

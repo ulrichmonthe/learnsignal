@@ -12,9 +12,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
 
-  if (!VALID_TYPES.includes(body.feedbackType)) {
+  if (typeof body?.feedbackType !== 'string' || !VALID_TYPES.includes(body.feedbackType as typeof VALID_TYPES[number])) {
     return NextResponse.json({ error: 'Invalid feedback_type' }, { status: 400 })
   }
 

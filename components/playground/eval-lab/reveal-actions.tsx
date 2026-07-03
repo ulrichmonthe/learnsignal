@@ -1,9 +1,16 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { pushEvalLabProgress } from '@/lib/eval-lab/persist'
 
-export default function RevealActions() {
+export default function RevealActions({ score }: { score: number }) {
   const router = useRouter()
+
+  // Reaching the full reveal = lab completed. Fire-and-forget skill credit.
+  useEffect(() => {
+    pushEvalLabProgress(score)
+  }, [score])
 
   return (
     <div className="flex items-center gap-6 flex-wrap">

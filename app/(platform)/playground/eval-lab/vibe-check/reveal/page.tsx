@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import type { RevealData } from '@/app/api/playground/eval-lab/reveal/route'
+import { computeReveal, type RevealData } from '@/lib/eval-lab/reveal'
 import RevealActions from '@/components/playground/eval-lab/reveal-actions'
 
 async function getRevealData(userId: string, sessionId: string | null): Promise<RevealData | null> {
@@ -37,86 +37,7 @@ async function getRevealData(userId: string, sessionId: string | null): Promise<
 
   if (!labels) return null
 
-  const labelMap = new Map<number, string>(labels.map((l: { slot_number: number; label: string }) => [l.slot_number, l.label]))
-  const ticketsLabelled = labels.length
-
-  const started = new Date(session.started_at)
-  const ended = session.completed_at ? new Date(session.completed_at) : new Date()
-  const sessionMinutes = Math.round((ended.getTime() - started.getTime()) / 60000)
-
-  const shortSlots = [3, 7, 11, 17]
-  const sarcasmSlots = [5, 9, 13, 16]
-  const multiSlots = [8, 14]
-
-  const shortCaught = shortSlots.filter(s => labelMap.get(s) === 'FAIL').length
-  const sarcasmCaught = sarcasmSlots.filter(s => labelMap.get(s) === 'FAIL').length
-  const ticket19CorrectlyPassed = labelMap.get(19) === 'PASS'
-  const sarcasmCaughtWithBonus = sarcasmCaught + (ticket19CorrectlyPassed ? 1 : 0)
-  const multiCaught = multiSlots.filter(
-    s => labelMap.get(s) === 'FAIL' || labelMap.get(s) === 'NEEDS_EDITS'
-  ).length
-  const subvertedPatternMissed = labelMap.get(19) === 'FAIL'
-
-  const shortDescription =
-    shortCaught === 0
-      ? 'Every ticket under 12 characters had invented details — error codes, account types, urgency levels that weren\'t in the input. These are worth looking at.'
-      : shortCaught >= 3
-        ? `You caught ${shortCaught} of them. The agent invented details — error codes, account types, urgency levels — that weren't in the input.`
-        : `You caught ${shortCaught} of them. The ones you missed were short inputs where the agent filled in plausible-sounding details that weren't in the ticket at all.`
-
-  const sarcasmDescription =
-    sarcasmCaught === 0
-      ? 'The agent labelled angry, sarcastic tickets as neutral sentiment across all four cases. This is worth re-reading — every one of those tickets contained clear frustration signals.'
-      : sarcasmCaught >= 4
-        ? `The agent labelled angry, sarcastic tickets as neutral. You caught ${sarcasmCaughtWithBonus} of the 5. The hardest cases used polite phrasing wrapped around clearly angry intent.`
-        : `The agent labelled angry, sarcastic tickets as neutral. You caught ${sarcasmCaughtWithBonus} of the 5. The ones you missed used polite words — all the surface markers of calm — while the intent was frustration.`
-
-  const multiDescription =
-    multiCaught === 0
-      ? 'Two tickets contained two separate issues — the agent only categorised one each time. Worth flagging: customers who mention multiple issues often have higher churn risk.'
-      : multiCaught === 1
-        ? 'You flagged one ticket where a customer mentioned two issues and the agent only categorised one. There was a second one. Worth investigating — this pattern often correlates with churn risk.'
-        : 'You flagged both tickets where a customer mentioned two issues and the agent only categorised one. This pattern often correlates with churn risk.'
-
-  const allCaught =
-    shortCaught === shortSlots.length &&
-    sarcasmCaughtWithBonus === 5 &&
-    multiCaught === multiSlots.length
-  const zeroCaught = shortCaught + sarcasmCaughtWithBonus + multiCaught === 0
-
-  return {
-    ticketsLabelled,
-    sessionMinutes: Math.max(1, sessionMinutes),
-    patterns: [
-      {
-        id: 'short-input-hallucination',
-        name: 'Short-input hallucinations',
-        caughtCount: shortCaught,
-        totalCount: shortSlots.length,
-        description: shortDescription,
-        tier: shortCaught >= 2 ? 'confirmed' : 'spotted',
-      },
-      {
-        id: 'sarcasm-as-neutral',
-        name: 'Sarcasm read as neutral',
-        caughtCount: sarcasmCaughtWithBonus,
-        totalCount: 5,
-        description: sarcasmDescription,
-        tier: sarcasmCaught >= 2 ? 'confirmed' : 'spotted',
-      },
-      {
-        id: 'multi-issue-drop',
-        name: 'Multi-issue label drops',
-        caughtCount: multiCaught,
-        totalCount: multiSlots.length,
-        description: multiDescription,
-        tier: 'spotted',
-      },
-    ],
-    subvertedPatternMissed,
-    allCaught,
-    zeroCaught,
-  }
+  return computeReveal(labels, session.started_at, session.completed_at)
 }
 
 export default async function RevealPage({
@@ -204,16 +125,15 @@ export default async function RevealPage({
 
       {/* Pattern cards */}
       <div className="space-y-3 mb-10">
-        {data.patterns.map((pattern, i) => {
+        {data.patterns.map(pattern => {
           const isConfirmed = pattern.tier === 'confirmed'
-          const isLast = i === data.patterns.length - 1
 
           return (
             <div
               key={pattern.id}
               style={{
-                borderLeft: `2px solid ${isConfirmed || !isLast ? '#C8F040' : 'rgba(255,255,255,0.3)'}`,
-                background: isConfirmed || !isLast
+                borderLeft: `2px solid ${isConfirmed ? '#C8F040' : 'rgba(255,255,255,0.3)'}`,
+                background: isConfirmed
                   ? 'rgba(200,240,64,0.04)'
                   : 'rgba(255,255,255,0.025)',
                 padding: '18px 22px',
@@ -232,14 +152,13 @@ export default async function RevealPage({
                   className="font-mono flex-shrink-0"
                   style={{
                     fontSize: '11px',
-                    color: isLast ? 'rgba(255,255,255,0.5)' : 'rgba(200,240,64,0.7)',
+                    color: isConfirmed ? 'rgba(200,240,64,0.7)' : 'rgba(255,255,255,0.5)',
                     whiteSpace: 'nowrap',
                     paddingTop: '3px',
                   }}
                 >
-                  {isLast
-                    ? 'SPOTTED BUT NOT YET CONFIRMED'
-                    : `${pattern.caughtCount} OF ${pattern.totalCount} CAUGHT`}
+                  {`${pattern.caughtCount} OF ${pattern.totalCount} CAUGHT`}
+                  {pattern.flaggedCount > 0 ? ` · ${pattern.flaggedCount} FLAGGED` : ''}
                 </span>
               </div>
 
@@ -306,8 +225,8 @@ export default async function RevealPage({
         </p>
       </div>
 
-      {/* Actions */}
-      <RevealActions />
+      {/* Actions — also pushes lab completion to skill credit on mount */}
+      <RevealActions score={data.score} />
 
       {/* Voice pass note — internal reminder, not rendered to users */}
       {/* [VOICE PASS REQUIRED] Practitioner quotes omitted pending real sources */}
