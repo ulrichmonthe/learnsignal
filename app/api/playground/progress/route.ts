@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { ensureUser } from '@/lib/supabase/ensure-user'
 import { recomputeSkills } from '@/lib/skills/recompute'
 
 // Lab progress cloud sync, keyed by the Clerk user id.
@@ -41,6 +42,9 @@ export async function POST(req: Request) {
   }
 
   const supabase = await createServiceClient()
+  // skill_scores FKs to users(id) — without the mirror row the recompute below
+  // is silently rejected and the Skill Map never moves.
+  await ensureUser(supabase, userId)
   await supabase.from('lab_progress').upsert(
     { user_id: userId, lab, data, updated_at: new Date().toISOString() },
     { onConflict: 'user_id,lab' },

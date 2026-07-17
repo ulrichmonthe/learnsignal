@@ -1,0 +1,35 @@
+-- ============================================================
+-- Let the `users` mirror accept a Clerk id without an email.
+-- Run in the Supabase SQL editor. Safe to re-run.
+-- ============================================================
+--
+-- WHY: Clerk owns identity; `users` is a local mirror that exists only so
+-- user-scoped tables can FK to it (skill_scores, vibe_check_sessions, …).
+-- Nothing reads it.
+--
+-- `email` was `unique not null` from the Supabase-auth era. Accounts created
+-- back then still hold their address under an old uuid id. When the same
+-- person signs in via Clerk they get a NEW id, and registering them as
+-- (clerk_id, same_email) trips the UNIQUE constraint — so the mirror row was
+-- never created, and every later write that FKs to users(id) failed:
+--   • vibe_check_sessions insert  → "violates foreign key constraint"
+--   • skill_scores upsert         → failed silently, so the Skill Map never moved
+--
+-- Dropping NOT NULL lets us register the Clerk id with a NULL email when the
+-- address is already spoken for. Postgres treats NULLs as distinct, so the
+-- UNIQUE constraint stays intact for real addresses.
+
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+
+-- Optional cleanup, NOT run automatically — inspect before you decide.
+-- Legacy rows are pre-Clerk accounts that nobody can sign in as anymore
+-- (Supabase Auth is gone). Their ids are uuids; Clerk ids look like 'user_…'.
+--
+--   SELECT id, email, created_at FROM users WHERE id NOT LIKE 'user\_%';
+--
+-- If a row is yours and you want the Clerk account to inherit its address,
+-- free the address up (the FK'd rows below it are already orphaned):
+--
+--   UPDATE users SET email = NULL WHERE id = '<legacy-uuid>';
+--
+-- The next page load will attach the address to your Clerk row.

@@ -67,7 +67,7 @@ export async function recomputeSkills(supabase: SupabaseClient, userId: string):
 
   const now = new Date().toISOString()
   for (const dimension of Object.keys(score)) {
-    await supabase.from('skill_scores').upsert(
+    const { error } = await supabase.from('skill_scores').upsert(
       {
         user_id: userId,
         dimension,
@@ -77,5 +77,10 @@ export async function recomputeSkills(supabase: SupabaseClient, userId: string):
       },
       { onConflict: 'user_id,dimension' },
     )
+    // Never fail silently: a rejected upsert here means the Skill Map stops
+    // moving, which looks like "the feature does nothing" rather than a bug.
+    if (error) {
+      throw new Error(`Skill recompute failed for ${dimension}: ${error.message}`)
+    }
   }
 }

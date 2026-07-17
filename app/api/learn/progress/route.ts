@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { ensureUser } from '@/lib/supabase/ensure-user'
 import { recomputeSkills } from '@/lib/skills/recompute'
 
 // Course lesson-completion, stored under lab_progress with key `course:<slug>`.
@@ -51,6 +52,9 @@ export async function POST(req: Request) {
   }
 
   const supabase = await createServiceClient()
+  // skill_scores FKs to users(id) — without the mirror row the recompute below
+  // is silently rejected and the Skill Map never moves.
+  await ensureUser(supabase, userId)
   const key = `course:${course}`
 
   // Merge: add this lesson to the completed set, advance lastSlug.

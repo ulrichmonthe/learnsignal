@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server'
+import { ensureUser } from '@/lib/supabase/ensure-user'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import VibeCheckWorkspace from '@/components/playground/eval-lab/vibe-check-workspace'
@@ -14,13 +15,18 @@ export default async function VibeCheckPage() {
 
   const supabase = await createServiceClient()
 
-  // Ensure the user exists in our custom users table (keyed by the Clerk user id).
-  await supabase
-    .from('users')
-    .upsert(
-      { id: userId, email },
-      { onConflict: 'id' }
+  // The session insert below FKs to users(id) — the mirror row must exist first.
+  try {
+    await ensureUser(supabase, userId, email)
+  } catch (e) {
+    return (
+      <div className="p-8">
+        <p className="font-mono text-xs text-red-400">
+          {e instanceof Error ? e.message : 'Could not register user'}
+        </p>
+      </div>
     )
+  }
 
   // Fetch all 20 tickets
   const { data: tickets, error: ticketsError } = await supabase
