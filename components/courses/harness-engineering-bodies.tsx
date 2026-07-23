@@ -14,6 +14,8 @@ import {
 } from '@/components/courses/lesson-helpers'
 import { Exercise } from '@/components/courses/exercise'
 import { HARNESS_EXERCISES } from '@/lib/courses/exercises/harness-engineering'
+import { ReliabilityCeilingExplainer } from '@/components/courses/explainers/reliability-ceiling'
+import { RulesBloatExplainer } from '@/components/courses/explainers/rules-bloat'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -248,6 +250,8 @@ export function HELesson2Body() {
         When a computer can, reaching for the model is the mistake.
       </Lead>
 
+      <ReliabilityCeilingExplainer />
+
       <Exercise spec={HARNESS_EXERCISES['lesson-2']} />
     </div>
   )
@@ -388,6 +392,8 @@ BAD:   let u = getUser(id).then(x => x)
           attention budget.
         </p>
       </ExerciseLeadIn>
+      <RulesBloatExplainer />
+
       <Exercise spec={HARNESS_EXERCISES['lesson-3']} />
     </div>
   )

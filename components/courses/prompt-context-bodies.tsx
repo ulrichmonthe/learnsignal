@@ -16,6 +16,7 @@ import {
 } from '@/components/courses/lesson-helpers'
 import { Exercise } from '@/components/courses/exercise'
 import { PCE_EXERCISES } from '@/lib/courses/exercises/prompt-context-engineering'
+import { ContextRotExplainer } from '@/components/courses/explainers/context-rot'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -193,6 +194,8 @@ export function PCELesson2Body() {
         compression all exist to defend it. You are not trying to fill the window. You are trying to spend
         it well.
       </P>
+
+      <ContextRotExplainer />
 
       <Exercise spec={PCE_EXERCISES['lesson-2']} />
     </div>

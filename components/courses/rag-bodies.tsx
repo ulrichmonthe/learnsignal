@@ -14,6 +14,9 @@ import {
 } from '@/components/courses/lesson-helpers'
 import { Exercise } from '@/components/courses/exercise'
 import { RAG_EXERCISES } from '@/lib/courses/exercises/rag'
+import { ChunkingTradeoffExplainer } from '@/components/courses/explainers/chunking-tradeoff'
+import { RetrievalAlphaExplainer } from '@/components/courses/explainers/retrieval-alpha'
+import { RerankingLiftExplainer } from '@/components/courses/explainers/reranking-lift'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -441,6 +444,8 @@ KNOWN EDGE CASES:
           two edge cases, and note one alternative you considered and rejected.
         </p>
       </ExerciseLeadIn>
+      <ChunkingTradeoffExplainer />
+
       <Exercise spec={RAG_EXERCISES['lesson-4']} />
     </div>
   )
@@ -513,6 +518,8 @@ export function RAGLesson5Body() {
         production RAG systems end up.
       </Lead>
 
+      <RetrievalAlphaExplainer />
+
       <Exercise spec={RAG_EXERCISES['lesson-5']} />
     </div>
   )
@@ -577,6 +584,8 @@ export function RAGLesson6Body() {
         the most relevant 3. A reranker fixes this at the last step, consistently improving
         faithfulness scores without requiring any changes to the index or embedding model.
       </Lead>
+
+      <RerankingLiftExplainer />
 
       <Exercise spec={RAG_EXERCISES['lesson-6']} />
     </div>
