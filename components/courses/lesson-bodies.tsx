@@ -15,6 +15,7 @@ import {
 } from '@/components/courses/lesson-helpers'
 import { Exercise } from '@/components/courses/exercise'
 import { EVALS_EXERCISES } from '@/lib/courses/exercises/evals-foundations'
+import { HonestyGapExplainer } from '@/components/courses/explainers/honesty-gap'
 
 // ── Lesson 2 ─────────────────────────────────────────────────────────────────
 
@@ -291,6 +292,8 @@ export function Lesson3Body() {
           eval becomes an adversarial test that doesn&apos;t reflect typical use. The 60/25/15 split
           is approximately what mature eval teams converge to.
         </P>
+
+        <HonestyGapExplainer />
       </Section>
 
       <Divider />
