@@ -216,6 +216,9 @@ export default function Home() {
         </Link>
         <ul className="footer-links">
           <li>
+            <Link href="/jobs">AI PM Jobs</Link>
+          </li>
+          <li>
             <Link href="/signals">Signals</Link>
           </li>
           <li>
