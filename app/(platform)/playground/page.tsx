@@ -67,11 +67,29 @@ const AREAS: PlayArea[] = [
     accent: 'rgba(255,180,80,0.9)',
   },
   {
+    eyebrow: 'Orchestration',
+    title: 'The Orchestration Lab',
+    tagline: 'Don’t calculate the cost curve. Run it.',
+    learn: [
+      'Simulate any topology 1,000 times — measured accuracy vs the Π you predicted',
+      'Watch a fan-out with no reducer fail the way the course says it will',
+      'The demo-luck moment: four clean runs at 88% is a 60% coin flip',
+    ],
+    realWorld: [
+      'Proving a five-stage pipeline is really a 77% system before you ship it',
+      'Costing a fan-out at 3× volume before finance flags the invoice',
+      'Deciding how much autonomy an agent gets by seeing its 24-hour blast radius',
+    ],
+    href: '/playground/orchestration-lab',
+    cta: 'Enter the Lab',
+    accent: 'rgba(200,240,64,0.9)',
+  },
+  {
     eyebrow: 'Courses',
     title: 'The Course Library',
-    tagline: 'Four courses. Self-paced. Built for practitioners.',
+    tagline: 'Five courses. Self-paced. Built for practitioners.',
     learn: [
-      'Evals Foundations, Prompt & Context, Harness, and RAG',
+      'Evals, Prompt & Context, Harness, RAG, and Agent Orchestration',
       'Concepts grounded in real product decisions, not slides',
       'Artifacts you keep: eval suites, scorecards, monitoring plans',
     ],

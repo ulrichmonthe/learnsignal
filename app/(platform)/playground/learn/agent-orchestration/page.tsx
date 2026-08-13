@@ -199,23 +199,30 @@ export default function AgentOrchestrationPage() {
           </div>
         </div>
 
-        {/* Practice lab — coming */}
+        {/* Practice lab — live */}
         <div
           className="mt-10 rounded-lg p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(255,255,255,0.1)' }}
+          style={{ background: 'rgba(200,240,64,0.04)', border: '0.5px solid rgba(200,240,64,0.15)' }}
         >
-          <p className="font-mono uppercase mb-1" style={{ fontSize: '9px', letterSpacing: '0.16em', color: 'rgba(255,255,255,0.35)' }}>
-            Practice environment · in development
+          <p className="font-mono uppercase mb-1" style={{ fontSize: '9px', letterSpacing: '0.16em', color: 'var(--accent)' }}>
+            Practice environment
           </p>
           <h3
             className="font-display font-medium mb-2"
-            style={{ fontSize: '18px', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic' }}
+            style={{ fontSize: '18px', color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}
           >
-            The Orchestration Lab is coming
+            Run it in the Orchestration Lab
           </h3>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-dm-sans)', lineHeight: '1.6' }}>
-            A LangGraph-based sandbox where you build, cost and break the five topologies yourself. Until it lands, the course carries the judgment; the lab will carry the reps.
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-dm-sans)', lineHeight: '1.6', marginBottom: '14px' }}>
+            A seeded simulation sandbox: build a topology, run it 1,000 times, and watch the measured accuracy diverge from the number you predicted. Free — no model calls.
           </p>
+          <Link
+            href="/playground/orchestration-lab"
+            className="inline-block font-mono rounded px-4 py-2 transition-opacity hover:opacity-80"
+            style={{ fontSize: '10px', letterSpacing: '0.14em', color: 'black', background: 'var(--accent)' }}
+          >
+            OPEN THE LAB →
+          </Link>
         </div>
 
       </div>
