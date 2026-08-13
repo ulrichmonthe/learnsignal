@@ -12,6 +12,7 @@ const KNOWN_COURSES = new Set([
   'prompt-context-engineering',
   'evals-foundations',
   'harness-engineering',
+  'agent-orchestration',
 ])
 const LESSON_SLUG = /^lesson-\d{1,3}$/
 

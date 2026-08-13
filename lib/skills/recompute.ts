@@ -43,6 +43,9 @@ export const TRACKS: Record<string, Track> = {
 
   // …and full weight where the course is the only source for its dimension.
   'course:harness-engineering': { dimension: 'execution', max: 100, frac: (d) => lessonsDone(d).done / lessonsDone(d).total, count: (d) => lessonsDone(d).done },
+  // Agent Orchestration — course-only for now (LangGraph lab lands later, which
+  // will drop this to 30 and add the lab at 70).
+  'course:agent-orchestration': { dimension: 'strategic-thinking', max: 100, frac: (d) => lessonsDone(d).done / lessonsDone(d).total, count: (d) => lessonsDone(d).done },
 }
 
 // Recompute every dimension from ALL the user's tracks and upsert skill_scores.

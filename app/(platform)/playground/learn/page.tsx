@@ -5,6 +5,7 @@ import { EVALS_COURSE } from '@/lib/courses/evals-foundations'
 import { PROMPT_CONTEXT_COURSE } from '@/lib/courses/prompt-context-engineering'
 import { HARNESS_COURSE } from '@/lib/courses/harness-engineering'
 import { RAG_COURSE } from '@/lib/courses/rag'
+import { AGENT_ORCHESTRATION_COURSE } from '@/lib/courses/agent-orchestration'
 
 const COURSES = [
   {
@@ -25,6 +26,11 @@ const COURSES = [
   {
     course: RAG_COURSE,
     href: '/playground/learn/rag',
+    cta: 'START COURSE',
+  },
+  {
+    course: AGENT_ORCHESTRATION_COURSE,
+    href: '/playground/learn/agent-orchestration',
     cta: 'START COURSE',
   },
 ]

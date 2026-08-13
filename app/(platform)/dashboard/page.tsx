@@ -23,6 +23,11 @@ const COURSE_META: Record<string, { title: string; href: string; dimension: stri
     href: '/playground/learn/harness-engineering',
     dimension: 'Execution',
   },
+  'agent-orchestration': {
+    title: 'Agent Orchestration',
+    href: '/playground/learn/agent-orchestration',
+    dimension: 'Strategic Thinking',
+  },
 }
 
 const LAB_META: Record<string, { title: string; href: string; dimension: string }> = {
