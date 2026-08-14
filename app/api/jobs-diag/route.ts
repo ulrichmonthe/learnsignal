@@ -24,17 +24,32 @@ export async function GET(req: Request) {
     }
   })()
 
-  let probe = 'not run'
+  let countProbe = 'not run'
+  let realProbe = 'not run'
+  let columns: string[] = []
   try {
     if (!effUrl || !effKey) {
-      probe = 'no url/key available'
+      countProbe = 'no url/key available'
     } else {
       const sb = createClient(effUrl, effKey, { auth: { persistSession: false } })
-      const { count, error } = await sb.from('ai_pm_jobs').select('*', { count: 'exact', head: true })
-      probe = error ? `ERROR: ${error.message}` : `OK: ${count} rows`
+
+      const c = await sb.from('ai_pm_jobs').select('*', { count: 'exact', head: true })
+      countProbe = c.error ? `ERROR: ${c.error.message}` : `OK: ${c.count} rows`
+
+      // the exact select the board uses
+      const r = await sb
+        .from('ai_pm_jobs')
+        .select('job_hash, company, ats, title, location, url, posted_at, archetype, seniority, ai_depth, ai_depth_evidence, capabilities_required, comp_disclosed, location_policy, one_line_summary, classified_at')
+        .order('classified_at', { ascending: false })
+        .limit(3)
+      realProbe = r.error ? `ERROR: ${r.error.message}` : `OK: ${r.data?.length ?? 0} rows`
+
+      // actual columns present (from one raw row, if any)
+      const s = await sb.from('ai_pm_jobs').select('*').limit(1)
+      if (!s.error && s.data && s.data[0]) columns = Object.keys(s.data[0])
     }
   } catch (e) {
-    probe = `THROW: ${e instanceof Error ? e.message : 'unknown'}`
+    realProbe = `THROW: ${e instanceof Error ? e.message : 'unknown'}`
   }
 
   return NextResponse.json({
@@ -42,6 +57,8 @@ export async function GET(req: Request) {
     JOBS_SUPABASE_SERVICE_KEY_set: !!jobsKey,
     connectingToHost: host,
     keyLength: effKey ? effKey.length : 0,
-    probe,
+    countProbe,
+    realProbe,
+    actualColumns: columns,
   })
 }
