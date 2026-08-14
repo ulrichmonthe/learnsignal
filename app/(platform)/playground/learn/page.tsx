@@ -84,7 +84,7 @@ export default function LearnPage() {
                 style={{ textDecoration: 'none' }}
               >
                 <div
-                  className="rounded-lg p-6 transition-all"
+                  className="rounded-lg p-6 transition-all active:scale-[0.99]"
                   style={{
                     border: '0.5px solid rgba(255,255,255,0.12)',
                     background: 'rgba(255,255,255,0.02)',

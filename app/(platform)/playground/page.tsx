@@ -140,7 +140,7 @@ export default function PlaygroundPage() {
             <Link
               key={a.title}
               href={a.href}
-              className="group flex flex-col rounded-xl p-6 transition-all"
+              className="group lift flex flex-col rounded-xl p-6"
               style={{ border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.02)', textDecoration: 'none' }}
             >
               <p className="font-mono uppercase mb-2" style={{ fontSize: '10px', letterSpacing: '0.14em', color: a.accent }}>

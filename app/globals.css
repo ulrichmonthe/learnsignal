@@ -28,6 +28,71 @@
     --layer-03: #9B7EC8;
     --layer-04: #F5C842;
     --layer-05: #6699FF;
+
+    /* ── Motion system ──────────────────────────────────────────────
+       One shared vocabulary of easing + duration so every surface moves
+       the same way. Curves after Emil Kowalski: --e-out decelerates for
+       enters/hovers; --e-pop overshoots for moments that earn delight.
+       Already mirrored inline in the explainers/labs/job board. */
+    --e-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --e-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --e-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --dur-1: 0.14s;   /* taps, small hovers */
+    --dur-2: 0.2s;    /* cards, borders */
+    --dur-3: 0.32s;   /* larger enters */
+  }
+}
+
+/* Crisp keyboard focus everywhere. Mouse users never see it (:focus-visible),
+   keyboard users always get an unmistakable accent ring. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* Reusable interaction primitives. Applied via className so diffs stay
+   surgical; they compose with inline styles because they only touch
+   transform / box-shadow (never set inline on these elements). */
+@layer components {
+  /* Press feedback for buttons, CTAs, tappable chips. */
+  .tap {
+    transition: transform var(--dur-1) var(--e-out), filter var(--dur-2) var(--e-out), opacity var(--dur-2) var(--e-out);
+  }
+  .tap:active {
+    transform: scale(0.96);
+  }
+
+  /* Cards / tiles: a small lift on hover, settle on press. */
+  .lift {
+    transition: transform var(--dur-2) var(--e-out), box-shadow var(--dur-2) var(--e-out), border-color var(--dur-2) var(--e-out);
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+  }
+  .lift:active {
+    transform: translateY(0) scale(0.994);
+  }
+}
+
+/* Honor the OS setting. Anyone who asks for less motion gets none — the
+   layout is identical, only the movement is removed. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .tap:active,
+  .lift:hover,
+  .lift:active {
+    transform: none !important;
   }
 }
 

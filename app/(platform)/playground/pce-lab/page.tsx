@@ -170,7 +170,7 @@ export default function PCELabPage() {
                 <Link
                   key={mission.id}
                   href={`/playground/pce-lab/${mission.id}`}
-                  className="block rounded-lg transition-all group"
+                  className="block rounded-lg transition-all active:scale-[0.99] group"
                   style={{
                     border: '0.5px solid rgba(255,255,255,0.07)',
                     background: 'rgba(255,255,255,0.01)',

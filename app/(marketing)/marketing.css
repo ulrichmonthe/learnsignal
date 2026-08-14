@@ -15,6 +15,7 @@
   --mono:'DM Mono',monospace;
   --sans:'DM Sans',sans-serif;
   --max:860px;
+  --e-out:cubic-bezier(0.23,1,0.32,1);
 }
 
 .ls-marketing {
@@ -65,7 +66,7 @@
   text-transform:uppercase;
   color:var(--text-secondary);
   text-decoration:none;
-  transition:color 0.2s;
+  transition:color 0.18s var(--e-out);
 }
 .ls-marketing .nav-links a:hover {color:var(--text-primary);}
 .ls-marketing .nav-waitlist {
@@ -78,9 +79,10 @@
   cursor:pointer;
   background:none;
   border:none;
-  transition:opacity 0.2s;
+  transition:opacity 0.18s var(--e-out),transform 0.14s var(--e-out);
 }
 .ls-marketing .nav-waitlist:hover {opacity:0.7;}
+.ls-marketing .nav-waitlist:active {transform:scale(0.96);}
 
 /* ── HERO ── */
 .ls-marketing .hero {
@@ -278,7 +280,7 @@
   font-weight:300;
   padding:13px 18px;
   outline:none;
-  transition:border-color 0.2s;
+  transition:border-color 0.18s var(--e-out);
 }
 .ls-marketing .waitlist-input::placeholder {color:var(--text-muted);}
 .ls-marketing .waitlist-input:focus {border-color:var(--accent);}
@@ -294,9 +296,10 @@
   cursor:pointer;
   font-weight:500;
   white-space:nowrap;
-  transition:opacity 0.2s;
+  transition:opacity 0.18s var(--e-out),transform 0.14s var(--e-out);
 }
 .ls-marketing .waitlist-btn:hover {opacity:0.85;}
+.ls-marketing .waitlist-btn:active {transform:scale(0.97);}
 .ls-marketing .waitlist-btn:disabled {
   opacity:0.75;
   cursor:not-allowed;
@@ -358,7 +361,7 @@
   text-transform:uppercase;
   color:var(--text-muted);
   text-decoration:none;
-  transition:color 0.2s;
+  transition:color 0.18s var(--e-out);
 }
 .ls-marketing .footer-links a:hover {color:var(--text-secondary);}
 .ls-marketing .footer-copy {
@@ -393,3 +396,15 @@
 
 
 .ls-marketing{min-height:100vh;}
+
+/* Respect the OS reduced-motion setting across the marketing subtree. */
+@media (prefers-reduced-motion: reduce){
+  .ls-marketing *,
+  .ls-marketing *::before,
+  .ls-marketing *::after{
+    transition-duration:0.01ms !important;
+    animation-duration:0.01ms !important;
+  }
+  .ls-marketing .nav-waitlist:active,
+  .ls-marketing .waitlist-btn:active{transform:none !important;}
+}

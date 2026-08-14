@@ -89,7 +89,7 @@ export default function PromptContextEngineeringPage() {
                   <Link
                     key={lesson.slug}
                     href={`/playground/learn/prompt-context-engineering/${lesson.slug}`}
-                    className="flex items-center gap-4 group transition-all rounded-lg"
+                    className="flex items-center gap-4 group transition-all active:scale-[0.99] rounded-lg"
                     style={{
                       padding: '14px 16px',
                       border: '0.5px solid rgba(255,255,255,0.08)',

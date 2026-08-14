@@ -127,14 +127,14 @@ export default async function DashboardPage() {
           <div className="flex gap-3 flex-wrap">
             <a
               href="/playground/learn"
-              className="font-mono text-xs font-medium rounded px-4 py-2 transition-opacity hover:opacity-90"
+              className="tap font-mono text-xs font-medium rounded px-4 py-2 hover:opacity-90"
               style={{ background: 'var(--accent)', color: 'black', letterSpacing: '0.08em' }}
             >
               START WITH A COURSE →
             </a>
             <a
               href="/playground"
-              className="font-mono text-xs font-medium rounded px-4 py-2 transition-opacity hover:opacity-70"
+              className="tap font-mono text-xs font-medium rounded px-4 py-2 hover:opacity-70"
               style={{
                 border: '0.5px solid rgba(255,255,255,0.25)',
                 color: 'var(--text)',
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
               <a
                 key={c.href}
                 href={c.href}
-                className="block border border-border p-4 hover:border-border2 transition-colors"
+                className="lift block border border-border p-4 hover:border-border2"
               >
                 <p className="font-mono text-xs text-accent uppercase tracking-wide mb-1">{c.kind}</p>
                 <p className="text-text text-sm">{c.title}</p>
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
             <>
               <a
                 href="/playground/learn"
-                className="block border border-border p-4 hover:border-border2 transition-colors"
+                className="lift block border border-border p-4 hover:border-border2"
               >
                 <p className="font-mono text-xs text-accent uppercase tracking-wide mb-1">Courses</p>
                 <p className="text-text text-sm">Four courses, an exercise in every lesson</p>
@@ -178,7 +178,7 @@ export default async function DashboardPage() {
               </a>
               <a
                 href="/playground"
-                className="block border border-border p-4 hover:border-border2 transition-colors"
+                className="lift block border border-border p-4 hover:border-border2"
               >
                 <p className="font-mono text-xs text-teal uppercase tracking-wide mb-1">Labs</p>
                 <p className="text-text text-sm">Hands-on missions where you make the call</p>

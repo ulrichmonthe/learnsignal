@@ -138,7 +138,7 @@ export default function RAGLabHome() {
                     <div key={m.id}>
                       {unlocked ? (
                         <Link href={`/playground/rag-lab/${m.id}`}
-                          className="block rounded-lg transition-all"
+                          className="block rounded-lg transition-all active:scale-[0.99]"
                           style={{
                             padding: '10px 12px',
                             background: 'rgba(255,255,255,0.04)',
