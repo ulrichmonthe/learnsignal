@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 export function Nav() {
   const pathname = usePathname();
   const isSignals = pathname.startsWith("/signals");
+  const isJobs = pathname.startsWith("/jobs");
 
   return (
     <nav>
@@ -13,6 +14,14 @@ export function Nav() {
         Learn<span>Signal</span>
       </Link>
       <ul className="nav-links">
+        <li>
+          <Link
+            href="/jobs"
+            style={isJobs ? { color: "#F0EFE8", fontWeight: 500 } : undefined}
+          >
+            Jobs
+          </Link>
+        </li>
         <li>
           <Link
             href="/signals"
