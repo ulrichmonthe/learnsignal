@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Nav } from '@/components/marketing/Nav'
 import { getJobs } from '@/lib/jobs/get-jobs'
 import { JobBoard } from '@/components/jobs/job-board'
 
@@ -21,7 +22,9 @@ export default async function JobsPage() {
   const { jobs, ok, error } = await getJobs()
 
   return (
-    <div className="jb-page">
+    <>
+      <Nav />
+      <div className="jb-page">
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -60,9 +63,6 @@ export default async function JobsPage() {
 
       <div className="jb-page-inner">
         <header className="jb-page-header">
-          <Link href="/" className="jb-logo">
-            Learn<b>·</b>Signal
-          </Link>
           <div className="jb-eyebrow">The board</div>
           <h1 className="jb-page-title">
             AI PM jobs, ranked by <em>depth</em>.
@@ -85,5 +85,6 @@ export default async function JobsPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
