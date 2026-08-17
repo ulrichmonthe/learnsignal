@@ -1,0 +1,19 @@
+# Weekly schedule. Each firing creates a session that runs the agent once.
+# Cron is standard 5-field POSIX: minute hour day-of-month month day-of-week.
+# "0 8 * * 1" = 08:00 every Monday, in the timezone below.
+name: signals-writer-weekly
+# agent + environment_id are filled in at apply time (see README) — the CLI needs
+# the concrete IDs returned by `ant beta:agents create` / `environments create`.
+initial_events:
+  - type: user.message
+    content:
+      - type: text
+        text: >-
+          Produce this week's Signal and file it for review. Search the last ~7
+          days, pick the single item with the highest decision-relevance for an AI
+          PM, verify the source, write it in the LearnSignal voice, self-grade
+          against the rubric, and POST the draft to signal_drafts as pending.
+schedule:
+  type: cron
+  expression: "0 8 * * 1"
+  timezone: America/New_York

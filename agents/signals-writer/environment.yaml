@@ -1,0 +1,13 @@
+name: signals-writer-env
+config:
+  type: cloud
+  # The agent needs the open web (search + fetch) and the Supabase REST host.
+  # Unrestricted is simplest. To lock it down instead, use:
+  #   networking:
+  #     type: limited
+  #     allow_package_managers: false
+  #     allowed_hosts:
+  #       - xsgasmddtqcylwfurrwu.supabase.co
+  #       # + the search/fetch hosts you want to permit
+  networking:
+    type: unrestricted

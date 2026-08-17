@@ -20,6 +20,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           <a href="/playground" className="font-mono text-xs text-text2 hover:text-text transition-colors">Playground</a>
           <a href="/playground/learn" className="font-mono text-xs text-text2 hover:text-text transition-colors">Learn</a>
           <a href="/jobs" className="font-mono text-xs text-text2 hover:text-text transition-colors">Jobs</a>
+          <a href="/drafts" className="font-mono text-xs text-text2 hover:text-text transition-colors">Drafts</a>
           <UserButton />
         </div>
       </nav>
