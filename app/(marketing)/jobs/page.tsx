@@ -1,8 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
 import { Nav } from '@/components/marketing/Nav'
 import { getJobs } from '@/lib/jobs/get-jobs'
 import { JobBoard } from '@/components/jobs/job-board'
+import { createServiceClient } from '@/lib/supabase/server'
+import { getClaimedCaps, getPractice, jobReadiness } from '@/lib/capabilities/readiness'
+import type { JobReadiness } from '@/lib/capabilities/types'
 
 export const metadata: Metadata = {
   title: 'AI PM Jobs — real AI product roles, ranked by depth · LearnSignal',
@@ -20,6 +24,26 @@ export const dynamic = 'force-dynamic'
 // styles scoped under `.jb-page` — no dependency on marketing.css.
 export default async function JobsPage() {
   const { jobs, ok, error } = await getJobs()
+
+  // Job-gap loop: for signed-in visitors, diff each role's required capabilities
+  // against the user's practice history (one lab_progress read for all rows).
+  // Failure to compute readiness must never take the public board down.
+  const { userId } = await auth()
+  let readiness: Record<string, JobReadiness> | null = null
+  if (userId && jobs.length > 0) {
+    try {
+      const supabase = await createServiceClient()
+      const [practice, claimed] = await Promise.all([
+        getPractice(supabase, userId),
+        getClaimedCaps(supabase, userId),
+      ])
+      readiness = Object.fromEntries(
+        jobs.map((job) => [job.jobHash, jobReadiness(job, practice, claimed)]),
+      )
+    } catch {
+      readiness = null
+    }
+  }
 
   return (
     <>
@@ -73,7 +97,7 @@ export default async function JobsPage() {
           </p>
         </header>
 
-        <JobBoard jobs={jobs} ok={ok} error={error} />
+        <JobBoard jobs={jobs} ok={ok} error={error} signedIn={!!userId} readiness={readiness} />
 
         <div className="jb-page-cta">
           <div className="jb-page-cta-text">

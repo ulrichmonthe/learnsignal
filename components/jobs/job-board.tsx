@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import type { Job } from '@/lib/jobs/get-jobs'
+import type { JobReadiness } from '@/lib/capabilities/types'
 
 // ── AI PM Job Board ──────────────────────────────────────────────────────────
 // Interactive, filterable board. Consumes the read-only getJobs() result. All
 // styles are scoped under `.jb` via one <style> block so nothing depends on
 // marketing.css and nothing leaks. Motion follows the honesty-gap easing tokens
 // and respects prefers-reduced-motion.
+//
+// Readiness (the job-gap loop): the server passes a per-job readiness diff for
+// signed-in users; signed-out visitors see a capability count + sign-in tease.
 
 type SortKey = 'newest' | 'depth'
 
@@ -15,6 +19,8 @@ interface JobBoardProps {
   jobs: Job[]
   ok: boolean
   error: string | null
+  signedIn?: boolean
+  readiness?: Record<string, JobReadiness> | null
 }
 
 // ── Humanizers ───────────────────────────────────────────────────────────────
@@ -113,7 +119,7 @@ function toggle<T>(set: ReadonlySet<T>, value: T): Set<T> {
   return next
 }
 
-export function JobBoard({ jobs, ok, error }: JobBoardProps) {
+export function JobBoard({ jobs, ok, error, signedIn = false, readiness = null }: JobBoardProps) {
   const [query, setQuery] = useState('')
   const [archetypes, setArchetypes] = useState<ReadonlySet<string>>(new Set())
   const [seniorities, setSeniorities] = useState<ReadonlySet<string>>(new Set())
@@ -350,6 +356,8 @@ export function JobBoard({ jobs, ok, error }: JobBoardProps) {
               job={job}
               expanded={expanded.has(job.jobHash)}
               onToggle={() => toggleExpanded(job.jobHash)}
+              signedIn={signedIn}
+              readiness={readiness?.[job.jobHash] ?? null}
             />
           ))}
         </ul>
@@ -389,17 +397,32 @@ function Chip({
   )
 }
 
+const READY_GLYPH: Record<string, string> = { met: '✓', near: '△', none: '○', claimed: '◇' }
+
+function readinessCapText(c: JobReadiness['caps'][number]): string {
+  if (c.state === 'near') return `${c.label} · you're ${c.level}/${c.need}`
+  if (c.state === 'none') return `${c.label} · untrained`
+  if (c.state === 'claimed') return `${c.label} · claimed`
+  return c.label
+}
+
 function JobCard({
   job,
   expanded,
   onToggle,
+  signedIn,
+  readiness,
 }: {
   job: Job
   expanded: boolean
   onToggle: () => void
+  signedIn: boolean
+  readiness: JobReadiness | null
 }) {
   const posted = humanizeDate(job.classifiedAt ?? job.postedAt)
   const hasEvidence = job.aiDepthEvidence.length > 0
+  const [gapOpen, setGapOpen] = useState(false)
+  const hasReadiness = readiness !== null && readiness.caps.length > 0
   return (
     <li className="jb-card">
       <div className="jb-card-top">
@@ -435,13 +458,83 @@ function JobCard({
 
       {job.oneLineSummary && <p className="jb-summary">{job.oneLineSummary}</p>}
 
-      {job.capabilitiesRequired.length > 0 && (
+      {!hasReadiness && job.capabilitiesRequired.length > 0 && (
         <div className="jb-caps">
           {job.capabilitiesRequired.map((c) => (
             <span key={c} className="jb-cap">
               {humanizeCapability(c)}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Readiness — the job-gap loop's board surface */}
+      {!signedIn && job.capabilitiesRequired.length > 0 && (
+        <div className="jb-locked">
+          This role needs {job.capabilitiesRequired.length} specific{' '}
+          {job.capabilitiesRequired.length === 1 ? 'capability' : 'capabilities'}.{' '}
+          <a href="/sign-in">Sign in to see your readiness →</a>
+        </div>
+      )}
+      {hasReadiness && (
+        <div className="jb-ready">
+          <div className="jb-ready-head">
+            <span className="jb-ready-label">Your readiness</span>
+            <span className={`jb-rpill ${readiness.ready ? 'jb-rpill-good' : 'jb-rpill-warm'}`}>
+              {readiness.ready
+                ? 'Ready to apply'
+                : `${readiness.gaps} gap${readiness.gaps === 1 ? '' : 's'} from ready`}
+            </span>
+          </div>
+          <div className="jb-rcaps">
+            {readiness.caps.map((c) => (
+              <span key={c.cap} className={`jb-rcap jb-rc-${c.state}`}>
+                {READY_GLYPH[c.state]} {readinessCapText(c)}
+              </span>
+            ))}
+          </div>
+          <div className="jb-ready-actions">
+            <button
+              type="button"
+              className="jb-why"
+              aria-expanded={gapOpen}
+              onClick={() => setGapOpen((v) => !v)}
+            >
+              <span className={`jb-chev ${gapOpen ? 'jb-chev-open' : ''}`} aria-hidden="true">
+                ▸
+              </span>
+              Gap analysis
+            </button>
+            <a className="jb-prep" href={`/prep/${job.jobHash}`}>
+              {readiness.ready ? 'Review & apply →' : 'Prep for this role →'}
+            </a>
+          </div>
+          <div className={`jb-evidence ${gapOpen ? 'jb-evidence-open' : ''}`}>
+            <div className="jb-evidence-inner">
+              <div className="jb-gap-bars">
+                {readiness.caps.map((c) => (
+                  <div key={c.cap} className="jb-gbar">
+                    <div className="jb-gbar-meta">
+                      <span className="jb-gbar-name">{c.label}</span>
+                      <span className={`jb-gbar-stat jb-gs-${c.state}`}>
+                        {c.state === 'met' ? `${c.need}/${c.need} · met` : `${c.level}/${c.need}`}
+                      </span>
+                    </div>
+                    <div className="jb-gtrack">
+                      <span
+                        className={`jb-gfill jb-gf-${c.state}`}
+                        style={{ width: `${Math.round(Math.min(1, c.need > 0 ? c.level / c.need : 0) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <p className="jb-gap-note">
+                  Levels count lessons and lab missions you&apos;ve completed here — demand is our
+                  read of the role, not a quote from the posting.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -611,6 +704,46 @@ const CSS = `
 .jb-evidence-list{margin:14px 0 2px;padding-left:18px;display:flex;flex-direction:column;gap:7px}
 .jb-evidence-list li{font-size:12.5px;line-height:1.5;color:var(--t2);font-family:"DM Sans",sans-serif}
 .jb-evidence-list li::marker{color:var(--acc)}
+
+/* Readiness (job-gap loop) */
+.jb-locked{margin-top:13px;padding-top:12px;border-top:0.5px dashed var(--line);
+  font-size:12.5px;color:var(--t3);font-family:"DM Sans",sans-serif}
+.jb-locked a{color:var(--acc);text-decoration:none}
+.jb-locked a:hover{text-decoration:underline}
+.jb-ready{margin-top:13px;padding-top:12px;border-top:0.5px dashed rgba(200,240,64,0.25)}
+.jb-ready-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.jb-ready-label{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:9px;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--acc)}
+.jb-rpill{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;border-radius:999px;padding:3px 10px}
+.jb-rpill-warm{color:#F5C842;border:0.5px solid rgba(245,200,66,0.4);background:rgba(245,200,66,0.06)}
+.jb-rpill-good{color:var(--acc);border:0.5px solid rgba(200,240,64,0.4);background:rgba(200,240,64,0.06)}
+.jb-rcaps{display:flex;flex-wrap:wrap;gap:6px}
+.jb-rcap{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;border-radius:6px;
+  padding:4px 8px;border:0.5px solid var(--line)}
+.jb-rc-met{color:var(--acc);border-color:rgba(200,240,64,0.35)}
+.jb-rc-near{color:#F5C842;border-color:rgba(245,200,66,0.35)}
+.jb-rc-none{color:var(--t3)}
+.jb-rc-claimed{color:#30C4B0;border-style:dashed;border-color:rgba(48,196,176,0.45)}
+.jb-ready-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px;flex-wrap:wrap}
+.jb-prep{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:0.03em;
+  color:#100f0c;background:var(--acc);text-decoration:none;padding:7px 12px;border-radius:7px;
+  transition:filter .18s var(--e-out),transform .14s var(--e-out)}
+.jb-prep:hover{filter:brightness(1.06)}
+.jb-prep:active{transform:scale(0.97)}
+.jb-gap-bars{display:flex;flex-direction:column;gap:11px;margin-top:14px;padding-bottom:2px}
+.jb-gbar{display:flex;flex-direction:column;gap:4px}
+.jb-gbar-meta{display:flex;justify-content:space-between;gap:10px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px}
+.jb-gbar-name{color:var(--t1);letter-spacing:0.04em}
+.jb-gbar-stat{color:var(--t3)}
+.jb-gs-met{color:var(--acc)}
+.jb-gs-near{color:#F5C842}
+.jb-gtrack{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,0.06);
+  border:0.5px solid var(--line);overflow:hidden}
+.jb-gfill{position:absolute;inset:0 auto 0 0;border-radius:4px;background:rgba(255,255,255,0.15)}
+.jb-gf-met{background:var(--acc)}
+.jb-gf-near{background:#F5C842}
+.jb-gap-note{margin:4px 0 0;font-size:11px;line-height:1.5;color:var(--t3);font-family:"DM Sans",sans-serif}
 
 @media(max-width:520px){
   .jb-card-top{flex-direction:column-reverse;align-items:flex-start;gap:10px}

@@ -1,6 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { auth } from '@clerk/nextjs/server'
 import { SkillMapRadar } from '@/components/dashboard/skill-map-radar'
+import { LoopPanel, type ClaimRow } from '@/components/dashboard/loop-panel'
+import { CAPABILITY_MAP, capLabel, itemHref } from '@/lib/capabilities/map'
 
 const COURSE_META: Record<string, { title: string; href: string; dimension: string }> = {
   rag: {
@@ -81,21 +83,44 @@ export default async function DashboardPage() {
   const { userId } = await auth()
   const supabase = await createServiceClient()
 
-  const [{ data: scores }, { data: dimensions }, { data: progressRows }] = await Promise.all([
-    supabase
-      .from('skill_scores')
-      .select('dimension, score, decisions_count')
-      .eq('user_id', userId ?? ''),
-    supabase
-      .from('skill_dimensions')
-      .select('id, name, description, display_order')
-      .order('display_order'),
-    supabase
-      .from('lab_progress')
-      .select('lab, data')
-      .eq('user_id', userId ?? '')
-      .order('updated_at', { ascending: false }),
-  ])
+  const [{ data: scores }, { data: dimensions }, { data: progressRows }, claimsRes, profileRes] =
+    await Promise.all([
+      supabase
+        .from('skill_scores')
+        .select('dimension, score, decisions_count')
+        .eq('user_id', userId ?? ''),
+      supabase
+        .from('skill_dimensions')
+        .select('id, name, description, display_order')
+        .order('display_order'),
+      supabase
+        .from('lab_progress')
+        .select('lab, data')
+        .eq('user_id', userId ?? '')
+        .order('updated_at', { ascending: false }),
+      // Job-gap loop tables — may not exist until the migration runs; degrade quietly.
+      supabase
+        .from('resume_claims')
+        .select('capability, evidence_quote')
+        .eq('user_id', userId ?? '')
+        .then((r) => r, () => ({ data: null })),
+      supabase
+        .from('public_profiles')
+        .select('handle, is_public')
+        .eq('user_id', userId ?? '')
+        .maybeSingle()
+        .then((r) => r, () => ({ data: null })),
+    ])
+
+  const claims: ClaimRow[] = ((claimsRes.data ?? []) as { capability: string; evidence_quote: string | null }[])
+    .filter((c) => CAPABILITY_MAP[c.capability])
+    .map((c) => ({
+      capability: c.capability,
+      label: capLabel(c.capability),
+      evidenceQuote: c.evidence_quote ?? '',
+      practiceHref: itemHref(CAPABILITY_MAP[c.capability].items[0]),
+    }))
+  const profile = (profileRes.data ?? null) as { handle: string; is_public: boolean } | null
 
   const scoreByDim = new Map((scores ?? []).map((s) => [s.dimension, s]))
   const isFirstRun =
@@ -188,6 +213,13 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ── Job-gap loop: resume bridge + decision record ───────────────── */}
+      <LoopPanel
+        initialClaims={claims}
+        initialHandle={profile?.handle ?? null}
+        initialPublic={profile?.is_public ?? false}
+      />
 
       {/* ── Skills you can acquire ─────────────────────────────────────── */}
       <div className="mt-14 pt-10" style={{ borderTop: '0.5px solid rgba(255,255,255,0.1)' }}>
