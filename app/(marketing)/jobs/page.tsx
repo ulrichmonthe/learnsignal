@@ -6,6 +6,7 @@ import { getJobs } from '@/lib/jobs/get-jobs'
 import { JobBoard } from '@/components/jobs/job-board'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getClaimedCaps, getPractice, jobReadiness } from '@/lib/capabilities/readiness'
+import { getScenarioPractice } from '@/lib/capabilities/scenarios'
 import type { JobReadiness } from '@/lib/capabilities/types'
 
 export const metadata: Metadata = {
@@ -33,12 +34,13 @@ export default async function JobsPage() {
   if (userId && jobs.length > 0) {
     try {
       const supabase = await createServiceClient()
-      const [practice, claimed] = await Promise.all([
+      const [practice, claimed, scenarios] = await Promise.all([
         getPractice(supabase, userId),
         getClaimedCaps(supabase, userId),
+        getScenarioPractice(supabase, userId),
       ])
       readiness = Object.fromEntries(
-        jobs.map((job) => [job.jobHash, jobReadiness(job, practice, claimed)]),
+        jobs.map((job) => [job.jobHash, jobReadiness(job, practice, claimed, scenarios)]),
       )
     } catch {
       readiness = null

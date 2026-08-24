@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import { jobsClient } from '@/lib/jobs/client'
 import { createServiceClient } from '@/lib/supabase/server'
-import { CAPABILITY_MAP, capLabel, itemHref, itemKindLabel } from '@/lib/capabilities/map'
+import { CAPABILITY_MAP, itemHref, itemKindLabel } from '@/lib/capabilities/map'
 import { getClaimedCaps, getPractice, itemDone, jobReadiness } from '@/lib/capabilities/readiness'
+import { getScenarioPractice } from '@/lib/capabilities/scenarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,11 +61,12 @@ export default async function PrepPage({ params }: { params: Promise<{ slug: str
   }
 
   const supabase = await createServiceClient()
-  const [practice, claimed] = await Promise.all([
+  const [practice, claimed, scenarioPractice] = await Promise.all([
     getPractice(supabase, userId ?? ''),
     getClaimedCaps(supabase, userId ?? ''),
+    getScenarioPractice(supabase, userId ?? ''),
   ])
-  const readiness = jobReadiness(job, practice, claimed)
+  const readiness = jobReadiness(job, practice, claimed, scenarioPractice)
 
   // The track: every mapped item for each required capability, with live done
   // state. Gap capabilities lead; met ones collapse to a single confirmation.
@@ -74,12 +76,22 @@ export default async function PrepPage({ params }: { params: Promise<{ slug: str
   const sections = gapCaps.map((c) => {
     const def = CAPABILITY_MAP[c.cap]
     const items = def.items.map((item) => ({
-      item,
+      item: { title: item.title, minutes: item.minutes },
       done: itemDone(item, practice),
       href: itemHref(item),
       kind: itemKindLabel(item),
     }))
-    return { cap: c, items }
+    // Scenarios tagged with this capability are the hardest practice available —
+    // list them first so the track leads with the real decision.
+    const scenarioItems = scenarioPractice
+      .filter((s) => s.capabilities.includes(c.cap))
+      .map((s) => ({
+        item: { title: s.title, minutes: s.estimatedMinutes },
+        done: s.completed,
+        href: `/scenarios/${s.slug}`,
+        kind: 'Scenario',
+      }))
+    return { cap: c, items: [...scenarioItems, ...items] }
   })
 
   const remainingMin = sections

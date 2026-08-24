@@ -1,14 +1,19 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { CAPABILITY_MAP, capLabel, demandLevel, type CapabilityItem } from './map'
-import type { CapReadiness, CapState, JobReadiness } from './types'
 
-// Readiness = demonstrated practice only. Levels count completed mapped items
-// from the same lab_progress rows the Skill Map already uses; resume claims
-// (resume_claims) can flip an untrained chip to "claimed" but never raise a
-// level or reduce the gap count — a resume changes the path, not the proof.
+// Database access for the job-gap loop. The readiness maths itself lives in
+// ./scoring (pure, unit-tested) and is re-exported here so existing call sites
+// keep importing from one place.
+//
+// Readiness = demonstrated practice only. Levels count completed lessons, lab
+// missions and scenarios; resume claims can flip an untrained chip to "claimed"
+// but never raise a level or reduce the gap count — a resume changes the path,
+// not the proof.
 
-export type ProgressRows = Map<string, unknown> // lab key → data
+export { itemDone, practiceLevel, jobReadiness } from './scoring'
+export type { ProgressRows, ScenarioSignal } from './scoring'
+
+import type { ProgressRows } from './scoring'
 
 export async function getPractice(
   supabase: SupabaseClient,
@@ -36,44 +41,4 @@ export async function getClaimedCaps(
   } catch {
     return new Set() // table not created yet — degrade to no claims
   }
-}
-
-export function itemDone(item: CapabilityItem, rows: ProgressRows): boolean {
-  if (item.kind === 'lesson') {
-    const d = rows.get(`course:${item.course}`) as { completedSlugs?: string[] } | undefined
-    return (d?.completedSlugs ?? []).includes(item.slug)
-  }
-  if (item.kind === 'mission') {
-    const d = rows.get(item.lab) as { missions?: Record<string, { completed?: boolean }> } | undefined
-    return d?.missions?.[item.missionId]?.completed === true
-  }
-  const d = rows.get('evallab') as { completed?: boolean } | undefined
-  return d?.completed === true
-}
-
-export function practiceLevel(cap: string, rows: ProgressRows): number {
-  const def = CAPABILITY_MAP[cap]
-  if (!def) return 0
-  return def.items.filter((it) => itemDone(it, rows)).length
-}
-
-export function jobReadiness(
-  job: { aiDepth: number; seniority: string; capabilitiesRequired: string[] },
-  rows: ProgressRows,
-  claimed: Set<string>,
-): JobReadiness {
-  const caps: CapReadiness[] = job.capabilitiesRequired
-    .filter((c) => CAPABILITY_MAP[c])
-    .map((cap) => {
-      const need = demandLevel(job, cap)
-      const level = practiceLevel(cap, rows)
-      let state: CapState
-      if (level >= need && need > 0) state = 'met'
-      else if (level > 0) state = 'near'
-      else if (claimed.has(cap)) state = 'claimed'
-      else state = 'none'
-      return { cap, label: capLabel(cap), state, level, need }
-    })
-  const gaps = caps.filter((c) => c.state !== 'met').length
-  return { gaps, ready: caps.length > 0 && gaps === 0, caps }
 }

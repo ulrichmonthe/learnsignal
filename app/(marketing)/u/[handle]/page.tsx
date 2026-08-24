@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { SkillMapRadar } from '@/components/dashboard/skill-map-radar'
 import { CAPABILITY_MAP, capLabel } from '@/lib/capabilities/map'
 import { getPractice, practiceLevel } from '@/lib/capabilities/readiness'
+import { getScenarioPractice } from '@/lib/capabilities/scenarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,19 +48,31 @@ export default async function RecordPage({ params }: { params: Promise<{ handle:
   }
   if (!profile || !profile.is_public) notFound()
 
-  const [{ data: scores }, practice] = await Promise.all([
+  const [{ data: scores }, practice, scenarioPractice] = await Promise.all([
     supabase
       .from('skill_scores')
       .select('dimension, score, decisions_count')
       .eq('user_id', profile.user_id),
     getPractice(supabase, profile.user_id),
+    getScenarioPractice(supabase, profile.user_id),
   ])
 
   const decisions = (scores ?? []).reduce((n, s) => n + (s.decisions_count ?? 0), 0)
   const dimsActive = (scores ?? []).filter((s) => s.score > 0).length
 
+  // Scenarios count here too, so a capability reads the same on the record as it
+  // does on the job board. They can push level past the map's item count, so the
+  // displayed denominator grows with it rather than rendering "4/3".
   const verified = Object.keys(CAPABILITY_MAP)
-    .map((cap) => ({ cap, label: capLabel(cap), level: practiceLevel(cap, practice), max: CAPABILITY_MAP[cap].items.length }))
+    .map((cap) => {
+      const level = practiceLevel(cap, practice, scenarioPractice)
+      return {
+        cap,
+        label: capLabel(cap),
+        level,
+        max: Math.max(CAPABILITY_MAP[cap].items.length, level),
+      }
+    })
     .filter((c) => c.level > 0)
     .sort((a, b) => b.level / b.max - a.level / a.max)
 
