@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/(.*)',
   '/jobs(.*)',
   '/u/(.*)',
+  '/weekly-signal(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {

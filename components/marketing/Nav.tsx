@@ -8,6 +8,7 @@ export function Nav() {
   const pathname = usePathname();
   const isSignals = pathname.startsWith("/signals");
   const isJobs = pathname.startsWith("/jobs");
+  const isWeekly = pathname.startsWith("/weekly-signal");
   const { isLoaded, isSignedIn } = useAuth();
 
   return (
@@ -22,6 +23,14 @@ export function Nav() {
             style={isJobs ? { color: "#F0EFE8", fontWeight: 500 } : undefined}
           >
             Jobs
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/weekly-signal"
+            style={isWeekly ? { color: "#F0EFE8", fontWeight: 500 } : undefined}
+          >
+            Weekly Signal
           </Link>
         </li>
         <li>

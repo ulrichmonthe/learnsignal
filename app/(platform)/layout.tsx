@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
+import { isSignalsAdmin } from '@/lib/signals/admin'
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
   // Defense in depth: middleware already gates these routes, but guard here too.
@@ -8,6 +9,11 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   if (!userId) {
     redirect('/sign-in')
   }
+
+  // Drafts is an internal review surface. The page and its API are gated
+  // server-side regardless; hiding the link keeps learners from being shown a
+  // door they can't open.
+  const { ok: isAdmin } = await isSignalsAdmin()
 
   return (
     <div className="min-h-screen bg-bg">
@@ -20,7 +26,10 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           <a href="/playground" className="font-mono text-xs text-text2 hover:text-text transition-colors">Playground</a>
           <a href="/playground/learn" className="font-mono text-xs text-text2 hover:text-text transition-colors">Learn</a>
           <a href="/jobs" className="font-mono text-xs text-text2 hover:text-text transition-colors">Jobs</a>
-          <a href="/drafts" className="font-mono text-xs text-text2 hover:text-text transition-colors">Drafts</a>
+          <a href="/weekly-signal" className="font-mono text-xs text-text2 hover:text-text transition-colors">Weekly Signal</a>
+          {isAdmin && (
+            <a href="/drafts" className="font-mono text-xs text-text2 hover:text-text transition-colors">Drafts</a>
+          )}
           <UserButton />
         </div>
       </nav>
