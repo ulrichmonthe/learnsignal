@@ -1,14 +1,104 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import type {
   ExerciseSpec,
   Verdict,
   Reveal,
   ChoiceOption,
 } from '@/lib/courses/exercise-types'
+// Client-safe module only — @/lib/calibration/exercise reaches node:crypto,
+// which webpack cannot bundle for the browser.
+import { parseLessonPath } from '@/lib/calibration/lesson-path'
 
 const ACCENT = 'var(--accent)'
+
+/**
+ * Records a committed Commit-Loop decision into the calibration corpus.
+ *
+ * Course and lesson come from the route, so none of the ~51 `<Exercise />` call
+ * sites need to change. Fire-and-forget: the reveal must never wait on this, and
+ * a failure must be invisible to the learner.
+ */
+function captureCommit(args: {
+  pathname: string | null
+  choiceId: string
+  options: ChoiceOption[]
+  verdict: Verdict
+  confidencePct: number | null
+  rationale: string
+  timeToDecideMs: number
+}) {
+  const where = args.pathname ? parseLessonPath(args.pathname) : null
+  if (!where) return // not a lesson route — capture nothing rather than a junk row
+
+  void fetch('/api/exercises/decision', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      course: where.course,
+      lesson: where.lesson,
+      choiceId: args.choiceId,
+      optionIds: args.options.map((o) => o.id),
+      optionLabels: args.options.map((o) => o.label),
+      expertVerdict: args.verdict,
+      confidencePct: args.confidencePct,
+      rationale: args.rationale.trim() || null,
+      timeToDecideMs: args.timeToDecideMs,
+    }),
+  }).catch(() => {})
+}
+
+/** Optional confidence control. Stays null until touched — a default would
+ *  record an opinion the learner never expressed. */
+function ConfidenceField({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: number | null
+  onChange: (v: number) => void
+  disabled?: boolean
+}) {
+  const BANDS: Array<{ label: string; pct: number }> = [
+    { label: 'Not sure', pct: 25 },
+    { label: 'Fairly sure', pct: 60 },
+    { label: 'Confident', pct: 90 },
+  ]
+  return (
+    <div className="mt-4">
+      <p
+        className="font-mono uppercase mb-2"
+        style={{ fontSize: '8.5px', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.35)' }}
+      >
+        How sure are you? · optional
+      </p>
+      <div className="flex gap-2 flex-wrap">
+        {BANDS.map((b) => (
+          <button
+            key={b.pct}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(b.pct)}
+            aria-pressed={value === b.pct}
+            className="tap rounded px-3 py-1.5 disabled:cursor-default"
+            style={{
+              fontSize: '11.5px',
+              fontFamily: 'var(--font-dm-sans)',
+              border: `0.5px solid ${value === b.pct ? 'rgba(200,240,64,0.5)' : 'rgba(255,255,255,0.14)'}`,
+              background: value === b.pct ? 'rgba(200,240,64,0.08)' : 'transparent',
+              color: value === b.pct ? ACCENT : 'rgba(255,255,255,0.55)',
+              opacity: disabled && value !== b.pct ? 0.4 : 1,
+            }}
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const VERDICT_META: Record<Verdict, { label: string; color: string }> = {
   'on-it': { label: 'On it', color: 'rgb(200,240,64)' },
@@ -241,9 +331,40 @@ function ChoiceExerciseView({
 }) {
   const [picked, setPicked] = useState<string | null>(null)
   const [rationale, setRationale] = useState('')
+  const [confidence, setConfidence] = useState<number | null>(null)
   const [committed, setCommitted] = useState(false)
   const requiresRationale = spec.kind === 'choice' && !!spec.rationale
   const selected = spec.options.find((o) => o.id === picked) as ChoiceOption | undefined
+
+  const pathname = usePathname()
+  // Timed from first engagement, not from mount: the exercise sits far down a
+  // long lesson, so mount-time would record time-on-page and be meaningless
+  // next to the scenario surface's genuine time-to-decide.
+  const engagedAt = useRef<number | null>(null)
+  // Ref, not state: a second click in the same frame would pass a state-based
+  // guard because the re-render hasn't flushed yet.
+  const committing = useRef(false)
+
+  function pick(id: string) {
+    if (committed) return
+    if (engagedAt.current === null) engagedAt.current = Date.now()
+    setPicked(id)
+  }
+
+  function commit() {
+    if (committing.current || committed || !selected) return
+    committing.current = true
+    setCommitted(true)
+    captureCommit({
+      pathname,
+      choiceId: selected.id,
+      options: spec.options,
+      verdict: selected.verdict,
+      confidencePct: confidence,
+      rationale,
+      timeToDecideMs: Date.now() - (engagedAt.current ?? Date.now()),
+    })
+  }
 
   return (
     <Shell type={spec.type} dimensions={spec.dimensions} stake={spec.stake}>
@@ -258,7 +379,7 @@ function ChoiceExerciseView({
           return (
             <button
               key={o.id}
-              onClick={() => !committed && setPicked(o.id)}
+              onClick={() => pick(o.id)}
               disabled={committed}
               className="text-left rounded-lg p-3.5 transition-colors disabled:cursor-default"
               style={{
@@ -298,11 +419,13 @@ function ChoiceExerciseView({
         <RationaleField value={rationale} onChange={setRationale} prompt={spec.rationale.prompt} disabled={committed} />
       )}
 
+      {picked && <ConfidenceField value={confidence} onChange={setConfidence} disabled={committed} />}
+
       {!committed && (
         <div className="mt-5">
           <CommitButton
             disabled={!picked || (requiresRationale && rationale.trim().length < 3)}
-            onClick={() => setCommitted(true)}
+            onClick={commit}
           >
             Commit
           </CommitButton>

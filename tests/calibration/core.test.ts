@@ -168,6 +168,21 @@ describe('validateDecision (AC-12)', () => {
     expect(validateDecision(validBody({ optionTexts: undefined })).ok).toBe(false)
   })
 
+  // Security regression: decision_events is shared with the course-exercise
+  // surface and both share the partial unique index that decides
+  // is_first_attempt. Without this guard a learner could POST a course id here
+  // to burn their own first-attempt slot for a lesson, so a later real answer
+  // is excluded from their published calibration — gaming their own record.
+  it('refuses the reserved course: namespace (self-gaming vector)', () => {
+    const r = validateDecision(validBody({ scenarioId: 'course:rag' }))
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error).toMatch(/reserved course/)
+  })
+
+  it('still accepts an ordinary scenario id', () => {
+    expect(validateDecision(validBody({ scenarioId: 'rag-vs-finetune' })).ok).toBe(true)
+  })
+
   it('rejects duplicate optionIds', () => {
     const r = validateDecision(
       validBody({ optionIds: ['a', 'a', 'c'], optionTexts: ['x', 'y', 'z'], choiceId: 'a' }),

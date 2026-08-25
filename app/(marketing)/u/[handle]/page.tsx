@@ -6,6 +6,7 @@ import { SkillMapRadar } from '@/components/dashboard/skill-map-radar'
 import { CAPABILITY_MAP, capLabel } from '@/lib/capabilities/map'
 import { getPractice, practiceLevel } from '@/lib/capabilities/readiness'
 import { getScenarioPractice } from '@/lib/capabilities/scenarios'
+import { getCalibration } from '@/lib/calibration/read'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,13 +49,14 @@ export default async function RecordPage({ params }: { params: Promise<{ handle:
   }
   if (!profile || !profile.is_public) notFound()
 
-  const [{ data: scores }, practice, scenarioPractice] = await Promise.all([
+  const [{ data: scores }, practice, scenarioPractice, calib] = await Promise.all([
     supabase
       .from('skill_scores')
       .select('dimension, score, decisions_count')
       .eq('user_id', profile.user_id),
     getPractice(supabase, profile.user_id),
     getScenarioPractice(supabase, profile.user_id),
+    getCalibration(supabase, profile.user_id),
   ])
 
   const decisions = (scores ?? []).reduce((n, s) => n + (s.decisions_count ?? 0), 0)
@@ -120,10 +122,19 @@ export default async function RecordPage({ params }: { params: Promise<{ handle:
         </header>
 
         <div className="rec-stats">
-          <div className="rec-stat rec-stat-hi">
-            <b>{decisions}</b>
-            <span>timed decisions</span>
-          </div>
+          {/* Calibration leads when there is enough signal to quote it honestly;
+              below the floor we show the raw count rather than a noisy percentage. */}
+          {calib ? (
+            <div className="rec-stat rec-stat-hi">
+              <b>{calib.pct}%</b>
+              <span>matched practitioner · n={calib.n}</span>
+            </div>
+          ) : (
+            <div className="rec-stat rec-stat-hi">
+              <b>{decisions}</b>
+              <span>timed decisions</span>
+            </div>
+          )}
           <div className="rec-stat">
             <b>{verified.length}</b>
             <span>verified capabilities</span>
@@ -179,9 +190,20 @@ export default async function RecordPage({ params }: { params: Promise<{ handle:
 
         <footer className="rec-foot">
           <p>
-            <b>Why this is credible:</b> capability levels count completed lessons and lab missions;
-            decision counts come from timed commit-before-reveal exercises where the call is recorded
-            <i> before</i> the answer is shown. Nothing on this page can be self-reported or back-filled.
+            <b>Why this is credible:</b> capability levels count completed lessons and lab missions.
+            {calib ? (
+              <>
+                {' '}The match rate compares each committed call against the practitioner answer
+                authored for that decision — recorded <i>before</i> the answer was shown, across{' '}
+                {calib.n} first attempts. Repeat attempts are excluded.
+              </>
+            ) : (
+              <>
+                {' '}Decision counts come from timed commit-before-reveal exercises where the call is
+                recorded <i>before</i> the answer is shown.
+              </>
+            )}{' '}
+            Nothing on this page can be self-reported or back-filled.
           </p>
           <p className="rec-cta">
             Build your own record — <Link href="/sign-up">start with a decision, not a video →</Link>
