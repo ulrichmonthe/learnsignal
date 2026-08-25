@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Nav } from "@/components/marketing/Nav";
+import { AuthCta } from "@/components/marketing/auth-cta";
 import { SlackDemo } from "@/components/marketing/slack-demo";
 
 export default function Home() {
@@ -200,13 +201,16 @@ export default function Home() {
             decision — the technique reveals itself only after you&apos;ve made
             the call.
           </p>
-          <Link
-            href="/sign-up"
+          {/* Auth-aware: /sign-up for a signed-in user starts a fresh Clerk auth
+              attempt, which ends their session and reads as being logged out. */}
+          <AuthCta
+            signedOutHref="/sign-up"
+            signedOutLabel="Get started →"
+            signedInHref="/dashboard"
+            signedInLabel="Continue where you left off →"
             className="waitlist-btn"
             style={{ display: "inline-block", textDecoration: "none" }}
-          >
-            Get started →
-          </Link>
+          />
         </div>
       </div>
 
@@ -222,7 +226,12 @@ export default function Home() {
             <Link href="/signals">Signals</Link>
           </li>
           <li>
-            <Link href="/sign-in">Sign in</Link>
+            <AuthCta
+              signedOutHref="/sign-in"
+              signedOutLabel="Sign in"
+              signedInHref="/dashboard"
+              signedInLabel="Dashboard"
+            />
           </li>
         </ul>
         <div className="footer-copy">© 2026</div>

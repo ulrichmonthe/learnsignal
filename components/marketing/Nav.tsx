@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton, useAuth } from "@clerk/nextjs";
 
 export function Nav() {
   const pathname = usePathname();
   const isSignals = pathname.startsWith("/signals");
   const isJobs = pathname.startsWith("/jobs");
+  const { isLoaded, isSignedIn } = useAuth();
 
   return (
     <nav>
@@ -34,8 +36,26 @@ export function Nav() {
           <Link href="/#about">About</Link>
         </li>
       </ul>
-      <Link href="/sign-in" className="nav-waitlist">Sign in →</Link>
+
+      {/* Auth-aware. Showing "Sign in" to an already-signed-in user isn't just
+          untidy: following it starts a fresh Clerk sign-in attempt, which tears
+          down the active session — it reads to the user as being logged out. */}
+      {/* Held back until Clerk resolves: rendering "Sign in" first and swapping
+          would flash the exact affordance that causes the bug. */}
+      {!isLoaded ? (
+        <span aria-hidden="true" />
+      ) : isSignedIn ? (
+        <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Link href="/dashboard" className="nav-waitlist">
+            Dashboard →
+          </Link>
+          <UserButton />
+        </span>
+      ) : (
+        <Link href="/sign-in" className="nav-waitlist">
+          Sign in →
+        </Link>
+      )}
     </nav>
   );
 }
-

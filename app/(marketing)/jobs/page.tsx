@@ -101,12 +101,16 @@ export default async function JobsPage() {
 
         <JobBoard jobs={jobs} ok={ok} error={error} signedIn={!!userId} readiness={readiness} />
 
+        {/* Auth-aware: sending a signed-in user to /sign-up starts a fresh Clerk
+            auth attempt, which tears down their session and reads as a logout. */}
         <div className="jb-page-cta">
           <div className="jb-page-cta-text">
-            Want to be the PM these roles are hunting for?
+            {userId
+              ? 'Close the gaps these roles are asking for.'
+              : 'Want to be the PM these roles are hunting for?'}
           </div>
-          <Link href="/sign-up" className="jb-page-cta-btn">
-            Start with LearnSignal →
+          <Link href={userId ? '/playground' : '/sign-up'} className="jb-page-cta-btn">
+            {userId ? 'Go to the playground →' : 'Start with LearnSignal →'}
           </Link>
         </div>
       </div>

@@ -473,7 +473,9 @@ function JobCard({
         <div className="jb-locked">
           This role needs {job.capabilitiesRequired.length} specific{' '}
           {job.capabilitiesRequired.length === 1 ? 'capability' : 'capabilities'}.{' '}
-          <a href="/sign-in">Sign in to see your readiness →</a>
+          {/* Carry the return path so signing in lands back on the board, not
+              on the dashboard — the user was mid-task. */}
+          <a href="/sign-in?redirect_url=/jobs">Sign in to see your readiness →</a>
         </div>
       )}
       {hasReadiness && (
