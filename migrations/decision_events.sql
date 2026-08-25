@@ -64,9 +64,16 @@ create table if not exists public.learner_profiles (
 alter table public.decision_events enable row level security;
 alter table public.learner_profiles enable row level security;
 
--- Scenario progress: the engine reads scenario_completions but nothing ever
--- wrote it (the progress route was an empty directory). Ensure it exists with
--- the columns the resume path needs.
+-- Scenario progress. The engine READ scenario_completions but nothing ever wrote
+-- it (the progress route was an empty directory), so the table already exists
+-- from db/schema.sql with a shape the resume path can't use:
+--   · no `updated_at`
+--   · `scenario_version integer NOT NULL` with no default — an upsert that
+--     doesn't supply it fails
+--   · no unique (user_id, scenario_id) — required for upsert ON CONFLICT
+-- `create table if not exists` would silently no-op and leave all three, so
+-- reconcile the real table instead.
+
 create table if not exists public.scenario_completions (
   id            uuid primary key default gen_random_uuid(),
   user_id       text not null,
@@ -75,9 +82,44 @@ create table if not exists public.scenario_completions (
   decisions     jsonb not null default '{}'::jsonb,
   completed     boolean not null default false,
   started_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now(),
-  unique (user_id, scenario_id)
+  updated_at    timestamptz not null default now()
 );
+
+alter table public.scenario_completions
+  add column if not exists updated_at timestamptz not null default now();
+alter table public.scenario_completions
+  add column if not exists decisions jsonb default '{}'::jsonb;
+alter table public.scenario_completions
+  add column if not exists completed boolean default false;
+alter table public.scenario_completions
+  add column if not exists current_act integer default 1;
+
+-- Legacy column: NOT NULL with no default rejects every upsert. It exists only
+-- on databases built from db/schema.sql, so guard the ALTER rather than assume.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public'
+       and table_name   = 'scenario_completions'
+       and column_name  = 'scenario_version'
+  ) then
+    execute 'alter table public.scenario_completions alter column scenario_version set default 1';
+    execute 'update public.scenario_completions set scenario_version = 1 where scenario_version is null';
+  end if;
+end $$;
+
+-- Collapse any pre-existing duplicates before the unique index is added,
+-- keeping the most recent row per (user, scenario).
+delete from public.scenario_completions a
+ using public.scenario_completions b
+ where a.user_id = b.user_id
+   and a.scenario_id = b.scenario_id
+   and a.started_at < b.started_at;
+
+-- Required by the progress route's upsert (on_conflict=user_id,scenario_id).
+create unique index if not exists scenario_completions_user_scenario_idx
+  on public.scenario_completions (user_id, scenario_id);
 
 create index if not exists scenario_completions_user_idx
   on public.scenario_completions (user_id, updated_at desc);
